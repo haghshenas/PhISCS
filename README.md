@@ -66,10 +66,10 @@ CPU_CLOCK: 3.13 GHz
 #### 2. output matrix file
 Suppose the input file is **INPUT_MATRIX.ext**, the output matrix will be stored in file **OUT_DIR/INPUT_MATRIX.output**. For example:
 ```
-input file: simID_1-n_10-m_50-fn_0.05-fp_0.001-na_0-k_0.noisyMatrix
-  log file: simID_1-n_10-m_50-fn_0.05-fp_0.001-na_0-k_0.output
+ input file: simID_1-n_10-m_50-fn_0.05-fp_0.001-na_0-k_0.noisyMatrix
+output file: simID_1-n_10-m_50-fn_0.05-fp_0.001-na_0-k_0.output
 
-input file: wang.txt
-  log file: wang.output
+ input file: wang.txt
+output file: wang.output
 ```
 The output file is also a tab-delimited file with the exact same format as the input file. The only difference compared to the input file is that _x_ values of the matrix are modified so that the matrix is conflict free.
