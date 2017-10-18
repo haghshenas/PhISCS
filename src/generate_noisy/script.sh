@@ -24,7 +24,7 @@ do
 				for k in ${percentsK[@]}
 				do
 					echo "K: "$k
-					python2 noisy.py $f $fn $fp $na $k $directory
+					python2 noisy.py $f $fn $fp $na $k
 				done
 			done
 		done
