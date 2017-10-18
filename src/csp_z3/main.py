@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime
+from itertools import *
 import argparse
 import os
 import sys
@@ -81,6 +82,9 @@ def check_conflict_free(sol_matrix):
 def getX(i,j):
 	return "X_" + str(i) + "_" + str(j)
 
+def getK(i):
+	return "K_" + str(i)
+
 def getY(i,j):
 	return "Y_" + str(i) + "_" + str(j)
 
@@ -108,7 +112,7 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 
 	if allow_col_elim:
 		for j in range(numMuts):
-			file.write("(declare-const K_"+str(j)+" Bool)\n")
+			file.write("(declare-const "+getK(j)+" Bool)\n")
 	else:
 		K = []
 
@@ -129,17 +133,17 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 				#file.write("(assert-soft (= "+getY(i,j)+" true) :weight -"+str((data[:,j]==0).sum())+")\n")
 				#file.write("(assert-soft (= "+getY(i,j)+" false) :weight -"+str((data[:,j]==1).sum())+")\n")
 			else:
-				print("Error. Data entry in matrix " + f + " not equal to any of 0,1,2. EXITING !!!")
+				print("Error. Data entry in matrix " + fstr + " not equal to any of 0,1,2. EXITING !!!")
 				sys.exit(2)
 
 
 	# Constraint for not allowing removed columns go further than maxCol
 	if allow_col_elim:
-		for combo in combinations(range(m), maxCol+1):
-			temp = "(assert-soft (not (and"
+		for combo in combinations(range(numMuts), maxCol+1):
+			temp = "(assert (not (and"
 			for i in combo:
-				temp = temp + " K_"+str(i)
-			temp = temp + ")) :weight 1000)\n"
+				temp = temp + " " + getK(i)
+			temp = temp + ")))\n"
 			file.write(temp)
 
 	# Constraint for checking conflict
@@ -150,7 +154,11 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 					file.write("(assert (or (not "+getY(i,p)+") (not "+getY(i,q)+") "+getB(p,q,1,1)+"))\n")	
 					file.write("(assert (or "+getY(i,p)+" (not "+getY(i,q)+") "+getB(p,q,0,1)+"))\n")
 					file.write("(assert (or (not "+getY(i,p)+")  "+getY(i,q)+" "+getB(p,q,1,0)+"))\n")
-					file.write("(assert (or (not "+getB(p,q,0,1)+") (not "+getB(p,q,1,0)+") (not "+getB(p,q,1,1)+")))")
+					if allow_col_elim:
+						file.write("(assert (or "+getK(p)+" "+getK(q)+" (not "
+						+getB(p,q,0,1)+") (not "+getB(p,q,1,0)+") (not "+getB(p,q,1,1)+")))")
+					else:	
+						file.write("(assert (or (not "+getB(p,q,0,1)+") (not "+getB(p,q,1,0)+") (not "+getB(p,q,1,1)+")))")
 					#add column elimination later
 
 	file.write("(check-sat)\n")
@@ -201,52 +209,76 @@ def read_ouput(n, m, fstr, allow_col_elim):
 
 if __name__ == "__main__":
 
-	inFile = sys.argv[1]
-	fid = sys.argv[2]
-	row = sys.argv[3]
-	col = sys.argv[4]
-	perfn = sys.argv[5]
-	perfp = sys.argv[6]
-	outDir = sys.argv[7]
+	parser = argparse.ArgumentParser(description='CSP by Z3 solver', add_help=True)
+	parser.add_argument('-f', '--file', required = True,
+						type = str,
+						help = 'Input matrix file')
+	parser.add_argument('-n', '--fnWeight', required = True,
+						type = int,
+						help = 'Weight for false negative')
+	parser.add_argument('-p', '--fpWeight', required = True,
+						type = int,
+						help = 'Weight for false negative')
+	parser.add_argument('-o', '--outDir', required = True,
+						type = str,
+						help = 'Output directory')
+	parser.add_argument('-g', '--ground',
+						type = str,
+						help = 'Ground truth matrix [""]')
+	parser.add_argument('-m', '--maxMut', #default = 0,
+						type = int,
+						help = 'Max number mutations to be eliminated [0]')
+	parser.add_argument('-c', '--maxCell',
+						type = int,
+						help = 'Max number cells to be eliminated [0]')
+	parser.add_argument('-t', '--threads',
+					type = int,
+					help = 'Number of threads [1]')
 
-	inFile='../../data/simulated/17oct/noisy/simID_'+fid+'-n_'+row+'-m_'+col+'-fn_'+perfn+'-fp_'+perfp+'-na_0-k_0.noisyMatrix'
-	logFile = outDir+'/simID_'+fid+'-n_'+row+'-m_'+col+'-fn_'+perfn+'-fp_'+perfp+'.txt'
-	groundFile = '../../data/simulated/17oct/ground/simID_'+fid+'-n_'+row+'-m_'+col+'.txt'
+	args = parser.parse_args()
+
+	inFile = args.file
+	fn_weight = args.fnWeight
+	fp_weight = args.fpWeight
+	outDir = args.outDir
+
+	noisy_data = read_data(inFile)
+	row = noisy_data.shape[0]
+	col = noisy_data.shape[1]
+	logFile = outDir+'/'+inFile.split('/')[-1].replace('.noisyMatrix', '.log')
+	groundFile = args.ground
+	
+
+	if args.maxMut is not None:
+		maxCol = args.maxMut
+		allow_col_elim = True
+	else:
+		maxCol = 0
+		allow_col_elim = False
+	if args.ground is not None:
+		real_data = False
+	else:
+		real_data = True
+
 	log = open(logFile, 'w')
 	
-	row = int(row)
-	col = int(col)
-	perfn = float(perfn)
-	perfp = float(perfp)
-	
-	# Parameters
-	''' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< '''
-	real_data = False
-	allow_col_elim = False
-	maxCol = int(col/10)
-	fn_weight = 1
-	#fp_weight = 30
-	fp_weight = int(float(perfn)/float(perfp))
-	''' >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> '''
-	
-
-	log.write('SIM_ID: '+fid+'\n')
+	log.write('SIM_ID: '+inFile.split('/')[-1]+'\n')
 	log.write('NUM_MUTATIONS(COLUMNS): '+str(col)+'\n')
 	log.write('NUM_ROWS(CELLS): '+str(row)+'\n')
 
-	noisy_data = read_data(inFile)
+	
 	t0 = datetime.now()
-	produce_input(logFile.replace('.txt','.temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
+	produce_input(logFile.replace('.log','.temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
 	total_model = datetime.now()-t0
 	t0 = datetime.now()
-	exe_command(logFile.replace('.txt','.temp1'))
+	exe_command(logFile.replace('.log','.temp1'))
 	total_running = datetime.now()-t0
-	output_data, col_el = read_ouput(row, col, logFile.replace('.txt','.temp2'), allow_col_elim)
+	output_data, col_el = read_ouput(row, col, logFile.replace('.log','.temp2'), allow_col_elim)
 	
 	log.write('MODEL_BUILD_TIME_SECONDS: '+str(total_model.total_seconds())+'\n')
 	log.write('RUNNING_TIME_SECONDS: '+str(total_running.total_seconds())+'\n') 
-	log.write('FALSE_NEGATIVE_RATE: '+str(perfn)+'\n')
-	log.write('FALSE_POSITIVE_RATE: '+str(perfp)+'\n')
+	log.write('FN_WEIGHT: '+str(fn_weight)+'\n')
+	log.write('FP_WEIGHT: '+str(fp_weight)+'\n')
 
 	if not real_data:
 		ground_data = read_data(groundFile)
@@ -286,5 +318,4 @@ if __name__ == "__main__":
 	log.write('NUM_THREADS: 1'+'\n')
 	log.write('CPU_CLOCK: 3.13 GHz'+'\n')
 	
-	write_output(output_data, logFile.replace('.txt','.out'))
-	
+	write_output(output_data, logFile.replace('.log','.output'))
