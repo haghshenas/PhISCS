@@ -1,11 +1,8 @@
 #!/bin/bash
 
-#files="$(find ./input -type f -name '*.txt' | grep '6sep' | grep 'simID_1-n_10' | sort)"
-files="$(find ./input -type f -name '*.txt' | grep '6sep' | sort)"
+directory="../../data/simulated/17oct/ground"
 
-for f in ${files}
-do
-	echo $f
-	python main.py $f
-	rm ./output/temp*
-done
+f="../../data/simulated/17oct/noisy/simID_1-n_10-m_50-fn_0.1-fp_0.001-na_0-k_0.noisyMatrix"
+o="../../"
+
+python2 main.py $f 1 10 50 0.1 0.001 $o

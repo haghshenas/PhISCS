@@ -6,32 +6,18 @@ import os
 import sys
 
 
-def read_data(fstr, fid, col, row, perfn, perfp, isGround):
-	if isGround:
-		f = fstr + 'simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'.txt'
-	else:
-		if perfp > 0:
-			f = fstr + 'simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'-fp_'+str(perfp)+'.txt'
-		else:
-			f = fstr + 'simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'.txt'
-			
-	df = pd.read_table(f)
+def read_data(file):
+	df = pd.read_table(file)
 	df.drop('cellID/mutID', axis=1, inplace=True)
-	return df.values # returns an ordinary matrix of dimensions row x col
+	return df.values
 
 
-def write_output(outresult, fstr, fid, col, row, perfn, perfp):
-	if perfp > 0:
-		f = fstr + 'outputFile-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'-fp_'+str(perfp)+'.txt'
-	elif perfn > 0:
-		f = fstr + 'outputFile-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'.txt'
-	else:
-		f = fstr + 'outputFile-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'.txt'
+def write_output(outresult, file):
 	df = pd.DataFrame(outresult)
 	df = df.add_prefix('mut')
 	df.index = ['cell'+str(row) for row in df.index]
 	df.index.name = 'cellID/mutID'
-	df.to_csv(f, sep='\t')
+	df.to_csv(file, sep='\t')
 
 
 def compare_flips(inp, output, n, m, zeroToOne):
@@ -102,17 +88,8 @@ def getB(p,q,a,b):
 	return "B_" + str(p) + "_" + str(q) + "_" + str(a) + "_" + str(b)
 
 
-def produce_input(data, n, m, allow_col_elim, fn_weight, fp_weight, fstr, fid, col, row, perfn, perfp, maxCol):
-	if perfp > 0:
-		f = fstr + 'temp1-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'-fp_'+str(perfp)+'.txt'
-	elif perfn > 0:
-		f = fstr + 'temp1-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'.txt'
-	else:
-		f = fstr + 'temp1-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'.txt'
-	
-	file = open(f, "w")	
-	numCells = n
-	numMuts  = m
+def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_weight, maxCol):
+	file = open(fstr, "w")
 	#file.write("(check-sat-using smt :random-seed 1)\n")
 	#file.write("(apply qflia)")
 	#file.write("(check-sat-using simplify)\n")
@@ -130,22 +107,20 @@ def produce_input(data, n, m, allow_col_elim, fn_weight, fp_weight, fstr, fid, c
 			file.write("(declare-const B_" + str(p) + "_" + str(q) + "_1_1 Bool)\n")
 
 	if allow_col_elim:
-		for j in range(m):
+		for j in range(numMuts):
 			file.write("(declare-const K_"+str(j)+" Bool)\n")
 	else:
 		K = []
 
 	# Objective
-	for i in range(n):
-		for j in range(m):
+	for i in range(numCells):
+		for j in range(numMuts):
 			if data[i][j] == 0:
 				file.write("(assert-soft (= "+getX(i,j)+" true) :weight -"+str(fn_weight)+ ")\n")
 				file.write("(assert (= "+getX(i,j)+" "+getY(i,j)+"))")
-
 			elif data[i][j] == 1:
 				file.write("(assert-soft (= "+getX(i,j)+" true) :weight -"+str(fp_weight)+")\n")
 				file.write("(assert (not (= "+getX(i,j)+" "+getY(i,j)+")))")
-
 			elif data[i][j] == 2:# NA Values
 				file.write("(assert (= "+getX(i,j)+" "+getY(i,j)+"))")
 				#file.write("(assert-soft (= X_"+str(i)+"_"+str(j)+" true) :weight -"+str((data[:,j]==0).sum())+")\n")
@@ -153,7 +128,6 @@ def produce_input(data, n, m, allow_col_elim, fn_weight, fp_weight, fstr, fid, c
 				#file.write("(assert (= "+getX(i,j)+" true))\n")
 				#file.write("(assert-soft (= "+getY(i,j)+" true) :weight -"+str((data[:,j]==0).sum())+")\n")
 				#file.write("(assert-soft (= "+getY(i,j)+" false) :weight -"+str((data[:,j]==1).sum())+")\n")
-
 			else:
 				print("Error. Data entry in matrix " + f + " not equal to any of 0,1,2. EXITING !!!")
 				sys.exit(2)
@@ -161,8 +135,7 @@ def produce_input(data, n, m, allow_col_elim, fn_weight, fp_weight, fstr, fid, c
 
 	# Constraint for not allowing removed columns go further than maxCol
 	if allow_col_elim:
-		c = maxCol
-		for combo in combinations(range(m), c+1):
+		for combo in combinations(range(m), maxCol+1):
 			temp = "(assert-soft (not (and"
 			for i in combo:
 				temp = temp + " K_"+str(i)
@@ -184,27 +157,13 @@ def produce_input(data, n, m, allow_col_elim, fn_weight, fp_weight, fstr, fid, c
 	file.write("(get-model)\n")
 
 
-def exe_command(fstr, fid, col, row, perfn, perfp):
-	if perfp > 0:
-		f = fstr + 'temp1-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'-fp_'+str(perfp)+'.txt'
-	elif perfn > 0:
-		f = fstr + 'temp1-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'.txt'
-	else:
-		f = fstr + 'temp1-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'.txt'
-	
-	command = "../z3-master/build/z3 -smt2 " + f + " > " + f.replace('temp1', 'temp2')
+def exe_command(file):
+	command = "../../../z3-master/build/z3 -smt2 " + file + " > " + file.replace('temp1', 'temp2')
 	os.system(command)
 
 
-def read_ouput(n, m, fstr, fid, col, row, perfn, perfp, allow_col_elim, data):
-	if perfp > 0:
-		f = fstr + 'temp2-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'-fp_'+str(perfp)+'.txt'
-	elif perfn > 0:
-		f = fstr + 'temp2-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'-fn_'+str(perfn)+'.txt'
-	else:
-		f = fstr + 'temp2-simID_'+str(fid)+'-n_'+str(row)+'-m_'+str(col)+'.txt'
-
-	file = open(f, "r")
+def read_ouput(n, m, fstr, allow_col_elim):
+	file = open(fstr, "r")
 	lines = file.readlines()
 	i = -1
 	j = -1
@@ -241,97 +200,91 @@ def read_ouput(n, m, fstr, fid, col, row, perfn, perfp, allow_col_elim, data):
 
 
 if __name__ == "__main__":
+
+	inFile = sys.argv[1]
+	fid = sys.argv[2]
+	row = sys.argv[3]
+	col = sys.argv[4]
+	perfn = sys.argv[5]
+	perfp = sys.argv[6]
+	outDir = sys.argv[7]
+
+	inFile='../../data/simulated/17oct/noisy/simID_'+fid+'-n_'+row+'-m_'+col+'-fn_'+perfn+'-fp_'+perfp+'-na_0-k_0.noisyMatrix'
+	logFile = outDir+'/simID_'+fid+'-n_'+row+'-m_'+col+'-fn_'+perfn+'-fp_'+perfp+'.txt'
+	groundFile = '../../data/simulated/17oct/ground/simID_'+fid+'-n_'+row+'-m_'+col+'.txt'
+	log = open(logFile, 'w')
 	
-	#f = './input/6sep/noisyFile-simID_1-n_50-m_50-fn_0.3.txt'
-	f = './input/13oct/noisyFile-simID_12-n_47-m_40-fn_0.22.txt'
-	#f = './input/13oct/noisyFile-simID_11-n_115-m_16-fn_0.22.txt'
-	#f = './input/2oct/noisyFile-simID_1-n_10-m_50-fn_0.3-fp_0.01.txt'
-	#f = sys.argv[1]
-
-	f_names = f.split("noisyFile")
-	f_names[1] = f_names[1].replace('.txt', '')
-	fid = f_names[1].split('_')[1].split('-')[0]
-	col = f_names[1].split('_')[3].split('-')[0]
-	row = f_names[1].split('_')[2].split('-')[0]
-	perfn = f_names[1].split('_')[4].split('-')[0]
-	try:
-		perfp = f_names[1].split('_')[5]
-		f = './output/' + 'logFile-simID_'+fid+'-n_'+row+'-m_'+col+'-fn_'+perfn+'-fp_'+perfp+'.txt'
-	except IndexError:
-		perfp = -1
-		f = './output/' + 'logFile-simID_'+fid+'-n_'+row+'-m_'+col+'-fn_'+perfn+'.txt'
-
-	logfile = open(f, 'w')
-	logfile.write('SIM_ID: '+str(fid)+'\n')
-	logfile.write('NUM_MUTATIONS(COLUMNS): '+str(col)+'\n')
-	logfile.write('NUM_ROWS(CELLS): '+str(row)+'\n')
 	row = int(row)
 	col = int(col)
-	noisy_data = read_data(f_names[0]+'noisyFile-', fid, col, row, perfn, perfp, False)
+	perfn = float(perfn)
+	perfp = float(perfp)
 	
-
 	# Parameters
 	''' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< '''
-	real_data = True
+	real_data = False
 	allow_col_elim = False
 	maxCol = int(col/10)
 	fn_weight = 1
-	fp_weight = 30
-	#fp_weight = int(float(perfn)/float(perfp))
+	#fp_weight = 30
+	fp_weight = int(float(perfn)/float(perfp))
 	''' >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> '''
 	
 
+	log.write('SIM_ID: '+fid+'\n')
+	log.write('NUM_MUTATIONS(COLUMNS): '+str(col)+'\n')
+	log.write('NUM_ROWS(CELLS): '+str(row)+'\n')
+
+	noisy_data = read_data(inFile)
 	t0 = datetime.now()
-	produce_input(noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, 
-					'./output/', fid, col, row, perfn, perfp, maxCol)
+	produce_input(logFile.replace('.txt','.temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
 	total_model = datetime.now()-t0
 	t0 = datetime.now()
-	exe_command('./output/', fid, col, row, perfn, perfp)
+	exe_command(logFile.replace('.txt','.temp1'))
 	total_running = datetime.now()-t0
-	output_data, col_el = read_ouput(row, col, './output/', fid, col, row, perfn, perfp, allow_col_elim, noisy_data)
+	output_data, col_el = read_ouput(row, col, logFile.replace('.txt','.temp2'), allow_col_elim)
 	
-	logfile.write('MODEL_BUILD_TIME_SECONDS: '+str(total_model.total_seconds())+'\n')
-	logfile.write('RUNNING_TIME_SECONDS: '+str(total_running.total_seconds())+'\n') 
-	logfile.write('FALSE_NEGATIVE_RATE: '+str(perfn)+'\n')
-	if perfp > 0:
-		logfile.write('FALSE_POSITIVE_RATE: '+str(perfp)+'\n')
+	log.write('MODEL_BUILD_TIME_SECONDS: '+str(total_model.total_seconds())+'\n')
+	log.write('RUNNING_TIME_SECONDS: '+str(total_running.total_seconds())+'\n') 
+	log.write('FALSE_NEGATIVE_RATE: '+str(perfn)+'\n')
+	log.write('FALSE_POSITIVE_RATE: '+str(perfp)+'\n')
+
 	if not real_data:
-		ground_data = read_data('./input/ground/', fid, col, row, perfn, perfp, True)
+		ground_data = read_data(groundFile)
 		a = compare_flips(ground_data, noisy_data, row, col, True)
 		b = compare_flips(ground_data, noisy_data, row, col, False)
-		logfile.write('TOTAL_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: '+str(a+b)+'\n')
-		logfile.write('0_1_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: '+str(a)+'\n')
-		logfile.write('1_0_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: '+str(b)+'\n')	
+		log.write('TOTAL_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: '+str(a+b)+'\n')
+		log.write('0_1_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: '+str(a)+'\n')
+		log.write('1_0_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: '+str(b)+'\n')	
 		a = compare_flips(noisy_data, output_data, row, col, True)
 		b = compare_flips(noisy_data, output_data, row, col, False)
-		logfile.write('TOTAL_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: '+str(a+b)+'\n')
-		logfile.write('0_1_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: '+str(a)+'\n')
-		logfile.write('1_0_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: '+str(b)+'\n')
+		log.write('TOTAL_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: '+str(a+b)+'\n')
+		log.write('0_1_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: '+str(a)+'\n')
+		log.write('1_0_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: '+str(b)+'\n')
 	else:
 		a = compare_flips(noisy_data, output_data, row, col, True)
 		b = compare_flips(noisy_data, output_data, row, col, False)
 		c = compare_na(noisy_data, output_data, row, col, True)
 		d = compare_na(noisy_data, output_data, row, col, False)
-		logfile.write('Total: '+str(a+b+c+d)+'\n')
-		logfile.write('0->1_Flips: '+str(a)+'\n')
-		logfile.write('1->0_Flips: '+str(b)+'\n')
-		logfile.write('2->0_Flips: '+str(c)+'\n')
-		logfile.write('2->1_Flips: '+str(d)+'\n')
+		log.write('Total: '+str(a+b+c+d)+'\n')
+		log.write('0->1_Flips: '+str(a)+'\n')
+		log.write('1->0_Flips: '+str(b)+'\n')
+		log.write('2->0_Flips: '+str(c)+'\n')
+		log.write('2->1_Flips: '+str(d)+'\n')
 	if allow_col_elim:
-		logfile.write('UPPER_BOUND_COLUMNS_REMOVED:'+str(maxCol)+'\n')
-		logfile.write('COLUMNS_REMOVED: '+str(len(col_el))+'\n')
+		log.write('UPPER_BOUND_COLUMNS_REMOVED:'+str(maxCol)+'\n')
+		log.write('COLUMNS_REMOVED: '+str(len(col_el))+'\n')
 		temp = 'MUTATIONS_REMOVED: '+ "," . join([str(i) for i in col_el])
-		logfile.write(temp+'\n')
+		log.write(temp+'\n')
 	if not real_data:
-		ground_data = read_data('./input/ground/', fid, col, row, perfn, perfp, True)
+		ground_data = read_data(groundFile)
 		a = compare_ground_solution(ground_data, noisy_data, output_data, row, col, True)
 		b = compare_ground_solution(ground_data, noisy_data, output_data, row, col, False)
-		logfile.write('TOTAL_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(a+b)+'\n')
-		logfile.write('0_1_0_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(a)+'\n')
-		logfile.write('1_0_1_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(b)+'\n')
-	logfile.write('CONFLICT_FREE: '+str(check_conflict_free(output_data))+'\n')
-	logfile.write('NUM_THREADS: 1'+'\n')
-	logfile.write('CPU_CLOCK: 3.13 GHz'+'\n')
+		log.write('TOTAL_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(a+b)+'\n')
+		log.write('0_1_0_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(a)+'\n')
+		log.write('1_0_1_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(b)+'\n')
+	log.write('CONFLICT_FREE: '+str(check_conflict_free(output_data))+'\n')
+	log.write('NUM_THREADS: 1'+'\n')
+	log.write('CPU_CLOCK: 3.13 GHz'+'\n')
 	
-	write_output(output_data, "./output/" , fid, col, row, perfn, perfp)
+	write_output(output_data, logFile.replace('.txt','.out'))
 	
