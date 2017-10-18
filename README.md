@@ -22,5 +22,17 @@ Other arguments:
 ```
 
 ## Input
+The input matrix file is assumed to be tab-delimited. This file has the following format for a matrix with _C_ cells and _M_ mutations:
+```
+cellID/mutID      mut1     mut2     mut3     ...      mutM
+cell1             x        x        x        ...      x
+cell2             x        x        x        ...      x
+cell3             x        x        x        ...      x
+...
+cellC             x        x        x        ...      x
+```
+Where x is in {0, 1, 2}. More specifically:
+* The first line is the header line. First string is an arbitrary string and next _M_ strings are the names of mutations.
+* Each of the next _C_ lines contains mutation information for a single cell. The first string is cell name and next _M_ integers show if a mutation is observed (1) or not (0). The value 2 means the information is not available (missing).
 
 ## Output
