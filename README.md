@@ -1,9 +1,9 @@
 # Tumor Phylogeny Recontstruction using CSP and ILP
-For every implementation (ILP, Z3, and Open-WBO) we should have **a single program that works on both simulated and real data sets**. This can be easily done if the program is fed by the input noisy matrix and potentially the ground truth matrix. If the ground truth matrix is missing, the program assumes that input matrix is from a real data set.
+For every implementation (ILP, Z3, and Open-WBO) we should have **a single program that works on both simulated and real data sets**.
 ## Usage
 ```
 usage: toolname [-h] -f FILE -n FNWEIGHT -p FPWEIGHT -o OUTDIR
-                [-g GROUND] [-m MAXMUT] [-t THREADS]
+                [-m MAXMUT] [-t THREADS]
 
 Required arguments:
    -f, --file     STR        Input matrix file
@@ -12,7 +12,6 @@ Required arguments:
    -o, --outDir   STR        Output directory
 
 Optional arguments:
-   -g, --ground   STR        Ground truth matrix [""]
    -m, --maxMut   INT        Max number mutations to be eliminated [0]
    -t, --threads  INT        Number of threads [1]
 
