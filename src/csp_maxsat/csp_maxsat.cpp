@@ -1,7 +1,6 @@
 /*******************************************************************************
 * Author: Ehsan Haghshenas
-********************************************************************************
-* Solving the new CSP formulation from Salem by Max-SAT
+* Last update: Oct 19, 2017
 *******************************************************************************/
 
 #include <cstdlib>
@@ -22,6 +21,7 @@ using namespace std;
 bool IS_WCNF = true;
 int  FN_W = 0;
 int  FP_W = 0;
+int  NUM_THREAD = 1;
 
 int mat[MAX_CELL][MAX_MUT]; // the 0/1 matrix
 vector<string> cellId;
@@ -198,6 +198,11 @@ bool parse_maxsat_output(string path, int &flip, int &flip01, int &flip10)
     string line;
     bool oLine = false, sLine = false, vLine = false;
     ifstream fin(path.c_str());
+    if(fin.is_open() == false)
+    {
+        return false;
+    }
+    // parse
     while(getline(fin, line))
     {
         if(line[0] == 'o')
@@ -355,6 +360,12 @@ int main(int argc, char *argv[])
 	double realTime = getRealTime();
 
 	get_input_data(pathNoisy);
+    fLog<< "FILE_NAME: " << get_file_name(pathNoisy) << "\n";
+    fLog<< "NUM_CELLS(ROWS): " << numCell << "\n";
+    fLog<< "NUM_MUTATIONS(COLUMNS): " << numMut << "\n";
+    fLog<< "FN_WEIGHT: " << FN_W << "\n";
+    fLog<< "FP_WEIGHT: " << FP_W << "\n";
+    fLog<< "NUM_THREADS: " << NUM_THREAD << "\n";
 	// formulate as Max-SAT
 	set_xy_variables();
 	set_b_variables();
@@ -370,19 +381,33 @@ int main(int argc, char *argv[])
     int numFlip = -1;
     int numFlip01 = -1;
     int numFlip10 = -1;
-    if(parse_maxsat_output(fileName + ".maxSAT.out", numFlip, numFlip01, numFlip10) == true)
+
+    if(parse_maxsat_output(fileName + ".maxSAT.out", numFlip, numFlip01, numFlip10) == false)
     {
-        // solution is found, save it!
-        save_updated_matrix(fileName + ".updated");
-        fLog<< "FLIPS_IN_SOLUTION: " << numFlip << "\n";
-        fLog<< "TOTAL_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: " << numFlip01 + numFlip10 << "\n";
-        fLog<< "0_1_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: " << numFlip01 << "\n";
-        fLog<< "1_0_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: " << numFlip10 << "\n";
+        cerr<< "[ERROR] Max-SAT solver faild!"<< endl;
+        exit(EXIT_FAILURE);
     }
 
-    fLog<< "MODEL_BUILD_TIME: " << getRealTime() - realTime - maxsatTime << "\n";
-    fLog<< "RUNNING_TIME_SECONDS: " << maxsatTime << "\n";
+    // solution is found, save it!
+    save_updated_matrix(fileName + ".updated");
+    fLog<< "MODEL_SOLVING_TIME_SECONDS: " << maxsatTime << "\n";
+    fLog<< "RUNNING_TIME_SECONDS: " << getRealTime() - realTime << "\n";
+    fLog<< "IS_CONFLICT_FREE: " << "YES" << "\n"; // FIXME: write the function
+    fLog<< "TOTAL_FLIPS_REPORTED: " << numFlip << "\n";
+    fLog<< "0_1_FLIPS_REPORTED: " << numFlip01 << "\n";
+    fLog<< "1_0_FLIPS_REPORTED: " << numFlip10 << "\n";
+    fLog<< "2_0_FLIPS_REPORTED: " << 0 << "\n"; // FIXME: 
+    fLog<< "2_1_FLIPS_REPORTED: " << 0 << "\n"; // FIXME: 
+    fLog<< "MUTATIONS_REMOVED_UPPER_BOUND: " << 0 << "\n"; // FIXME: 
+    fLog<< "MUTATIONS_REMOVED_NUM: " << 0 << "\n"; // FIXME: 
+    fLog<< "MUTATIONS_REMOVED_INDEX: " << "\n"; // FIXME: 
+
     fLog.close();
+
+    if(remove((fileName + ".maxSAT.in").c_str()) != 0 )
+        cerr<< "Could not remove file:" << fileName + ".maxSAT.in" << endl;
+    if(remove((fileName + ".maxSAT.out").c_str()) != 0 )
+        cerr<< "Could not remove file:" << fileName + ".maxSAT.out" << endl;
 
 	return EXIT_SUCCESS;
 }
