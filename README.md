@@ -2,8 +2,8 @@
 For every implementation (ILP, Z3, and Open-WBO) we should have **a single program that works on both simulated and real data sets**. This can be easily done if the program is fed by the input noisy matrix and potentially the ground truth matrix. If the ground truth matrix is missing, the program assumes that input matrix is from a real data set.
 ## Usage
 ```
-toolname -f INPUT_MATRIX -n FN_WEIGHT -p FP_WEIGHT -o OUT_DIR [-g GROUND_TRUTH_MATRIX]
-         [-m MAX_MUT] [-c MAX_CELL] [-t THREADS] [-h]
+toolname [-h] -f INPUT_MATRIX -n FNWEIGHT -p FPWEIGHT -o OUTDIR [-g GROUND]
+         [-m MAX_MUT] [-t THREADS] [-h]
 
 Required arguments:
    -f, --file     STR        Input matrix file
@@ -14,7 +14,6 @@ Required arguments:
 Optional arguments:
    -g, --ground   STR        Ground truth matrix [""]
    -m, --maxMut   INT        Max number mutations to be eliminated [0]
-   -c, --maxCell  INT        Max number cells to be eliminated [0]
    -t, --threads  INT        Number of threads [1]
 
 Other arguments:
