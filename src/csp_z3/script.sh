@@ -1,47 +1,36 @@
 #!/bin/bash
 
-directory="../../data/simulated/17oct/ground"
+directory="../../data/simulated/19oct/noisy"
+o="./result"
+z3="../../../z3-master/build/z3"
 
-f="../../data/simulated/17oct/noisy/simID_1-n_10-m_50-fn_0.1-fp_0.001-na_0-k_0.noisyMatrix"
-o="../../"
-
-simID=(1..10)
-Ns=(10 20 50)
-Ms=(50)
-percentsFN=(0.05 0.1 0.15 0.2 0.25 0.3)
-percentsFP=(0.001 0.0001 0.00001)
-percentsNA=(0)
+percentsFN=(0.15 0.25)
+percentsFP=(0.0001)
+percentsNA=(0.15)
 percentsK=(0)
 
-files="$(find $directory -type f -name '*.txt' | sort)"
+files="$(find $directory -type f -name '*.noisyMatrix' | sort)"
 
-for id in ${files}
+for f in ${files}
 do
-	echo "simID: "$id
-	for n in ${Ns}
+	echo "File: "$f
+	for fn in ${percentsFN[@]}
 	do
-		echo "N: "$id
-		for m in ${Ms}
+		echo "FN: "$fn
+		for fp in ${percentsFP[@]}
 		do
-			echo "M: "$id
-			for fn in ${percentsFN[@]}
-			do
-				echo "FN: "$fn
-				for fp in ${percentsFP[@]}
-				do
-					echo "FP: "$fp
-					python2 main.py $f $id $n $m $fn $fp $o
-					#for na in ${percentsNA[@]}
-					#do
-					#	echo "NA: "$na
-					#	for k in ${percentsK[@]}
-					#	do
-					#		echo "K: "$k
-							
-					#	done
-					#done
-				done
+			echo "FP: "$fp
+			for na in ${percentsNA[@]}
+			do	
+				fpW=$(echo "$(echo $fn/$fp|bc -l)/1"|bc)
+				g=$(echo $f | sed "s/noisy/ground/g")
+				g=$(echo $g | sed "s/-fn_${fn}//g")
+				g=$(echo $g | sed "s/-fp_${fp}//g")
+				g=$(echo $g | sed "s/-na_${na}//g")
+				g=$(echo $g | sed "s/groundMatrix/groundTruthMatrix/g")
+				python main.py -f $f -n 1 -p $fpW -o $o -g $g -z3path $z3
 			done
+			
 		done
 	done
 done
