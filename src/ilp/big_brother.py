@@ -3,7 +3,7 @@ from gurobipy import *
 import numpy as np
 from datetime import datetime
 import argparse
-import os
+import os, errno
 
 # ======== INFO
 '''
@@ -251,6 +251,14 @@ while c < cells:
 	c += 1
 
 flip1_matrix = np.array(flip1_matrix)
+
+try:
+	os.makedirs(args.outDir)
+except OSError as exc:
+	if exc.errno == errno.EEXIST and os.path.isdir(args.outDir):
+		pass
+	else:
+		raise
 
 filename = os.path.splitext(os.path.basename(args.file))[0]
 outfile = os.path.join(args.outDir, filename)
