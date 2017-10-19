@@ -304,111 +304,110 @@ sol_matrix = np.array(sol_matrix)
 
 file_out.close()
 
-if args.ground:
-	log = open('{0}.log'.format(outfile), 'w+')
-	# --- Input info
-	log.write('FILE_NAME: {0}\n'.format(str(os.path.basename(args.file))))
-	log.write('NUM_ROWS(CELLS): {0}\n'.format(str(cells)))
-	log.write('NUM_MUTATIONS(COLUMNS): {0}\n'.format(str(mutations)))
 
-	# -- Ground info
+log = open('{0}.log'.format(outfile), 'w+')
+# --- Input info
+log.write('FILE_NAME: {0}\n'.format(str(os.path.basename(args.file))))
+log.write('NUM_ROWS(CELLS): {0}\n'.format(str(cells)))
+log.write('NUM_MUTATIONS(COLUMNS): {0}\n'.format(str(mutations)))
 
-	# ground_file = 'simID_{0}-n_{1}-m_50.txt'.format(
-	# 	str(sim_id), str(arg_cell))
-	# ground_matrix = np.genfromtxt(folder + '/ground/' + ground_file, skip_header=1, usecols=range(1, 51))
-	#
-	# flips_in_noisy = 0
-	# flips01_in_noisy = 0
-	# flips10_in_noisy = 0
-	# flips01_matrix = np.zeros((cells, mutations))
-	# flips10_matrix = np.zeros((cells, mutations))
-	# for c in range(cells):
-	# 	for m in range(mutations):
-	# 		if ground_matrix[c,m] == 0 and matrix_input[c,m] == 1:
-	# 			flips01_in_noisy += 1
-	# 			flips_in_noisy += 1
-	# 			flips01_matrix[c, m] = 1
-	#
-	# 		if ground_matrix[c,m] == 1 and matrix_input[c,m] == 0:
-	# 			flips10_in_noisy += 1
-	# 			flips_in_noisy += 1
-	# 			flips10_matrix[c, m] = 1
-	#
-	# log.write('TOTAL_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: {0}\n'.format(
-	# 	str(flips_in_noisy)))
-	# log.write('0_1_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: {0}\n'.format(
-	# 	str(flips01_in_noisy)))
-	# log.write('1_0_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: {0}\n'.format(
-	# 	str(flips10_in_noisy)))
+# -- Ground info
 
-	log.write('TOTAL_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
-		str(flip0_sol_tot + flip1_sol_tot)))
-	log.write('0_1_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
-		str(flip0_sol_tot)))
-	log.write('1_0_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
-		str(flip1_sol_tot)))
-	log.write('UPPER_BOUND_COLUMNS_REMOVED: {0}\n'.format(
-		str(args.maxMut)))
-	log.write('COLUMNS REMOVED: {0}\n'. format(
-		str(sum(removed_cols))))
-	log.write('MUTATIONS REMOVED: {0}\n'.format(
-		','.join(removed_mutation_names)))
+# ground_file = 'simID_{0}-n_{1}-m_50.txt'.format(
+# 	str(sim_id), str(arg_cell))
+# ground_matrix = np.genfromtxt(folder + '/ground/' + ground_file, skip_header=1, usecols=range(1, 51))
+#
+# flips_in_noisy = 0
+# flips01_in_noisy = 0
+# flips10_in_noisy = 0
+# flips01_matrix = np.zeros((cells, mutations))
+# flips10_matrix = np.zeros((cells, mutations))
+# for c in range(cells):
+# 	for m in range(mutations):
+# 		if ground_matrix[c,m] == 0 and matrix_input[c,m] == 1:
+# 			flips01_in_noisy += 1
+# 			flips_in_noisy += 1
+# 			flips01_matrix[c, m] = 1
+#
+# 		if ground_matrix[c,m] == 1 and matrix_input[c,m] == 0:
+# 			flips10_in_noisy += 1
+# 			flips_in_noisy += 1
+# 			flips10_matrix[c, m] = 1
+#
+# log.write('TOTAL_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: {0}\n'.format(
+# 	str(flips_in_noisy)))
+# log.write('0_1_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: {0}\n'.format(
+# 	str(flips01_in_noisy)))
+# log.write('1_0_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: {0}\n'.format(
+# 	str(flips10_in_noisy)))
 
-	# --- Overlap info
+log.write('TOTAL_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
+	str(flip0_sol_tot + flip1_sol_tot)))
+log.write('0_1_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
+	str(flip0_sol_tot)))
+log.write('1_0_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
+	str(flip1_sol_tot)))
+log.write('UPPER_BOUND_COLUMNS_REMOVED: {0}\n'.format(
+	str(args.maxMut)))
+log.write('COLUMNS REMOVED: {0}\n'. format(
+	str(sum(removed_cols))))
+log.write('MUTATIONS REMOVED: {0}\n'.format(
+	','.join(removed_mutation_names)))
 
-	# overlap010 = 0
-	# overlap101 = 0
-	# overlap_total = 0
-	#
-	# for c in range(cells):
-	# 	for m in range(mutations):
-	# 		if flips01_matrix[c, m] == 1 and flip1_matrix[c, m] == 1:
-	# 			overlap010 += 1
-	# 			overlap_total += 1
-	# 		elif flips10_matrix[c, m] and flip0_matrix[c, m] == 1:
-	# 			overlap101 += 1
-	# 			overlap_total += 1
-	# 		elif flips01_matrix[c, m] == 1 and flip1_matrix[c, m] == 1:
-	# 			overlap_total += 1
-	# 		elif flips10_matrix[c, m] == 1 and flip0_matrix[c, m] == 1:
-	# 			overlap_total += 1
-	#
-	# log.write('TOTAL_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: {0}\n'.format(
-	# 	str(overlap_total)))
-	# log.write('0_1_0_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: {0}\n'.format(
-	# 	str(overlap010)))
-	# log.write('1_0_1_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: {0}\n'.format(
-	# 	str(overlap101)))
+# --- Overlap info
 
-	# --- DOUBLE-CHECK PP
-	conflict_free = True
-	for p in range(sol_matrix.shape[1]):
-		for q in range(p + 1, sol_matrix.shape[1]):
-			oneone = False
-			zeroone = False
-			onezero = False
-			for r in range(sol_matrix.shape[0]):
-				if sol_matrix[r][p] == 1 and sol_matrix[r][q] == 1:
-					oneone = True
-				if sol_matrix[r][p] == 0 and sol_matrix[r][q] == 1:
-					zeroone = True
-				if sol_matrix[r][p] == 1 and sol_matrix[r][q] == 0:
-					onezero = True
+# overlap010 = 0
+# overlap101 = 0
+# overlap_total = 0
+#
+# for c in range(cells):
+# 	for m in range(mutations):
+# 		if flips01_matrix[c, m] == 1 and flip1_matrix[c, m] == 1:
+# 			overlap010 += 1
+# 			overlap_total += 1
+# 		elif flips10_matrix[c, m] and flip0_matrix[c, m] == 1:
+# 			overlap101 += 1
+# 			overlap_total += 1
+# 		elif flips01_matrix[c, m] == 1 and flip1_matrix[c, m] == 1:
+# 			overlap_total += 1
+# 		elif flips10_matrix[c, m] == 1 and flip0_matrix[c, m] == 1:
+# 			overlap_total += 1
+#
+# log.write('TOTAL_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: {0}\n'.format(
+# 	str(overlap_total)))
+# log.write('0_1_0_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: {0}\n'.format(
+# 	str(overlap010)))
+# log.write('1_0_1_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: {0}\n'.format(
+# 	str(overlap101)))
 
-			if oneone and zeroone and onezero:
-				conflict_free = False
-				if verbose:
-					print('Conflict in columns (%d, %d)' % (p, q))
+# --- DOUBLE-CHECK PP
+conflict_free = True
+for p in range(sol_matrix.shape[1]):
+	for q in range(p + 1, sol_matrix.shape[1]):
+		oneone = False
+		zeroone = False
+		onezero = False
+		for r in range(sol_matrix.shape[0]):
+			if sol_matrix[r][p] == 1 and sol_matrix[r][q] == 1:
+				oneone = True
+			if sol_matrix[r][p] == 0 and sol_matrix[r][q] == 1:
+				zeroone = True
+			if sol_matrix[r][p] == 1 and sol_matrix[r][q] == 0:
+				onezero = True
 
-	log.write('CONFLICT_FREE: {0}\n'.format(str(conflict_free)))
-	log.write('NUM_THREADS: {0}\n'.format(str(args.threads)))
-	log.write('MODEL_BUILD_TIME_SECONDS: {0}\n'.format(str(time_to_model.total_seconds())))
-	log.write('RUNNING_TIME_SECONDS: {0}\n'.format(str(time_to_opt.total_seconds())))
+		if oneone and zeroone and onezero:
+			conflict_free = False
+			if verbose:
+				print('Conflict in columns (%d, %d)' % (p, q))
 
-	log.close()
+log.write('CONFLICT_FREE: {0}\n'.format(str(conflict_free)))
+log.write('NUM_THREADS: {0}\n'.format(str(args.threads)))
+log.write('MODEL_BUILD_TIME_SECONDS: {0}\n'.format(str(time_to_model.total_seconds())))
+log.write('RUNNING_TIME_SECONDS: {0}\n'.format(str(time_to_opt.total_seconds())))
 
-else:
-	if tree:
-		# Tree construction
-		from tree import *
-		write_tree(sol_matrix, mutation_names, outfile)
+log.close()
+
+if tree:
+	# Tree construction
+	from tree import *
+	write_tree(sol_matrix, mutation_names, outfile)
