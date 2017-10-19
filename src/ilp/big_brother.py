@@ -47,6 +47,7 @@ start_model = datetime.now()
 DELIMITER = '\t'
 
 verbose = False
+tree = False
 
 inp = np.genfromtxt(args.file, skip_header = 1, delimiter = DELIMITER)
 
@@ -405,6 +406,7 @@ if args.ground:
 	log.close()
 
 else:
-	# Tree construction
-	from tree import *
-	write_tree(sol_matrix, mutation_names, outfile)
+	if tree:
+		# Tree construction
+		from tree import *
+		write_tree(sol_matrix, mutation_names, outfile)
