@@ -19,13 +19,17 @@ def write_noisy_both(outresult, file, percfn, percfp, percna, perck):
 	df.index.name = 'cellID/mutID'
 	df.to_csv(f, sep='\t')
 
-def introduce_false_both(data, n, m, percfn, percfp):
-	countOne = 0;
-	countZero = 0;
+def introduce_false_both(data, n, m, percfn, percfp, percna):
+	countOne = 0
+	countZero = 0
+	countOneZero = 0
 	indexFN = []
 	indexFP = []
+	indexNA = []
 	for i in range(n):
 		for j in range(m):
+			countOneZero = countOneZero + 1
+			indexNA.append([i,j])
 			if data[i][j] == 1:
 				countOne = countOne + 1
 				indexFN.append([i,j])
@@ -34,16 +38,19 @@ def introduce_false_both(data, n, m, percfn, percfp):
 				indexFP.append([i,j])
 	falsenegative = math.ceil(countOne * percfn)
 	falsepositive = math.ceil(countZero * percfp)
+	nas = math.ceil(countOneZero * percna)
 	random.shuffle(indexFN)
 	random.shuffle(indexFP)
-	falsenegative = int(falsenegative)
-	falsepositive = int(falsepositive)
-	for i in range(falsenegative):
+	random.shuffle(indexNA)
+	for i in range(int(falsenegative)):
 		[a,b] = indexFN[i]
 		data[a][b] = 0
-	for i in range(falsepositive):
+	for i in range(int(falsepositive)):
 		[a,b] = indexFP[i]
 		data[a][b] = 1
+	for i in range(int(nas)):
+		[a,b] = indexFP[i]
+		data[a][b] = 2
 	return data
 
 
@@ -60,5 +67,5 @@ if __name__ == "__main__":
 	data = read_data(file)
 	
 	#data = introduce_false_both(data, n, m, float(percfn), float(percfp), float(percna), float(perck))
-	data = introduce_false_both(data, data.shape[0], data.shape[1], float(percfn), float(percfp))
+	data = introduce_false_both(data, data.shape[0], data.shape[1], float(percfn), float(percfp), float(percna))
 	write_noisy_both(data, file, percfn, percfp, percna, perck)
