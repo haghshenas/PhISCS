@@ -3,8 +3,7 @@ import pandas as pd
 from datetime import datetime
 from itertools import *
 import argparse
-import os
-import sys
+import os, sys, errno
 
 
 def read_data(file):
@@ -79,7 +78,10 @@ def check_conflict_free(sol_matrix):
 					onezero = True
 			if oneone and zeroone and onezero:
 				conflict_free = False
-	return conflict_free
+	if conflict_free:
+		return "YES"
+	else:
+		return "NO"
 
 
 def getX(i,j):
@@ -250,6 +252,14 @@ if __name__ == "__main__":
 	tale = inFile.split('.')[-1]
 	logFile = outDir+'/'+inFile.split('/')[-1].replace(tale, 'log')
 	groundFile = args.ground
+
+	try:
+		os.makedirs(outDir)
+	except OSError as exc:
+		if exc.errno == errno.EEXIST and os.path.isdir(outDir):
+			pass
+		else:
+			raise
 	
 	if args.maxMut is not None:
 		maxCol = args.maxMut
@@ -257,64 +267,42 @@ if __name__ == "__main__":
 	else:
 		maxCol = 0
 		allow_col_elim = False
-	if args.ground is not None:
-		real_data = False
-	else:
-		real_data = True
-
+	
 	log = open(logFile, 'w')
-	log.write('SIM_ID: '+inFile.split('/')[-1]+'\n')
-	log.write('NUM_MUTATIONS(COLUMNS): '+str(col)+'\n')
-	log.write('NUM_ROWS(CELLS): '+str(row)+'\n')
-
 	t0 = datetime.now()
 	produce_input(logFile.replace('log','temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
-	total_model = datetime.now()-t0
-	t0 = datetime.now()
+	t1 = datetime.now()
 	exe_command(logFile.replace('log','temp1'), z3path)
-	total_running = datetime.now()-t0
+	total_model = datetime.now()-t1
 	output_data, col_el = read_ouput(row, col, logFile.replace('log','temp2'), allow_col_elim)
+	total_running = datetime.now()-t0
 	
-	log.write('MODEL_BUILD_TIME_SECONDS: '+str(total_model.total_seconds())+'\n')
-	log.write('RUNNING_TIME_SECONDS: '+str(total_running.total_seconds())+'\n') 
+	log.write('FILE_NAME: '+inFile.split('/')[-1]+'\n')
+	log.write('NUM_CELLS(ROWS): '+str(row)+'\n')
+	log.write('NUM_MUTATIONS(COLUMNS): '+str(col)+'\n')
 	log.write('FN_WEIGHT: '+str(fn_weight)+'\n')
 	log.write('FP_WEIGHT: '+str(fp_weight)+'\n')
-
-	if not real_data:
-		ground_data = read_data(groundFile)
-		a = compare_flips(ground_data, noisy_data, row, col, True)
-		b = compare_flips(ground_data, noisy_data, row, col, False)
-		log.write('TOTAL_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: '+str(a+b)+'\n')
-		log.write('0_1_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: '+str(a)+'\n')
-		log.write('1_0_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: '+str(b)+'\n')	
-		a = compare_flips(noisy_data, output_data, row, col, True)
-		b = compare_flips(noisy_data, output_data, row, col, False)
-		log.write('TOTAL_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: '+str(a+b)+'\n')
-		log.write('0_1_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: '+str(a)+'\n')
-		log.write('1_0_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: '+str(b)+'\n')
-	else:
-		a = compare_flips(noisy_data, output_data, row, col, True)
-		b = compare_flips(noisy_data, output_data, row, col, False)
-		c = compare_na(noisy_data, output_data, row, col, True)
-		d = compare_na(noisy_data, output_data, row, col, False)
-		log.write('Total: '+str(a+b+c+d)+'\n')
-		log.write('0->1_Flips: '+str(a)+'\n')
-		log.write('1->0_Flips: '+str(b)+'\n')
-		log.write('2->0_Flips: '+str(c)+'\n')
-		log.write('2->1_Flips: '+str(d)+'\n')
+	log.write('NUM_THREADS: '+str(1)+'\n')
+	log.write('MODEL_SOLVING_TIME_SECONDS: '+str(total_model.total_seconds())+'\n')
+	log.write('RUNNING_TIME_SECONDS: '+str(total_running.total_seconds())+'\n')
+	log.write('IS_CONFLICT_FREE: '+str(check_conflict_free(output_data))+'\n')
+	a = compare_flips(noisy_data, output_data, row, col, True)
+	b = compare_flips(noisy_data, output_data, row, col, False)
+	c = compare_na(noisy_data, output_data, row, col, True)
+	d = compare_na(noisy_data, output_data, row, col, False)
+	log.write('TOTAL_FLIPS_REPORTED: '+str(a+b+c+d)+'\n')
+	log.write('0_1_FLIPS_REPORTED: '+str(a)+'\n')
+	log.write('1_0_FLIPS_REPORTED: '+str(b)+'\n')
+	log.write('2_0_FLIPS_REPORTED: '+str(c)+'\n')
+	log.write('2_1_FLIPS_REPORTED: '+str(d)+'\n')
 	if allow_col_elim:
-		log.write('UPPER_BOUND_COLUMNS_REMOVED:'+str(maxCol)+'\n')
-		log.write('COLUMNS_REMOVED: '+str(len(col_el))+'\n')
-		temp = 'MUTATIONS_REMOVED: '+ "," . join([str(i) for i in col_el])
+		log.write('MUTATIONS_REMOVED_UPPER_BOUND:'+str(maxCol)+'\n')
+		log.write('MUTATIONS_REMOVED_NUM: '+str(len(col_el))+'\n')
+		temp = 'MUTATIONS_REMOVED_INDEX: '+ "," . join([str(i) for i in col_el])
 		log.write(temp+'\n')
-	if not real_data:
-		ground_data = read_data(groundFile)
-		a = compare_ground_solution(ground_data, noisy_data, output_data, row, col, True)
-		b = compare_ground_solution(ground_data, noisy_data, output_data, row, col, False)
-		log.write('TOTAL_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(a+b)+'\n')
-		log.write('0_1_0_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(a)+'\n')
-		log.write('1_0_1_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(b)+'\n')	
-
+	
 	output_mat = write_output(output_data, logFile.replace('log','output'), col_el)
-	log.write('CONFLICT_FREE: '+str(check_conflict_free(output_data))+'\n')
-	log.write('NUM_THREADS: 1'+'\n')
+	command = "rm "+outDir+"/*.temp1"
+	os.system(command)
+	command = "rm "+outDir+"/*.temp2"
+	os.system(command)
