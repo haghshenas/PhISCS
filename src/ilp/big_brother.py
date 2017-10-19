@@ -347,8 +347,10 @@ if args.ground:
 		str(flip0_sol_tot)))
 	log.write('1_0_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
 		str(flip1_sol_tot)))
+	log.write('UPPER_BOUND_COLUMNS_REMOVED: {0}\n'.format(
+		str(args.maxMut)))
 	log.write('COLUMNS REMOVED: {0}\n'. format(
-		sum(removed_cols)))
+		str(sum(removed_cols))))
 	log.write('MUTATIONS REMOVED: {0}\n'.format(
 		','.join(removed_mutation_names)))
 
