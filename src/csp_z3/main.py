@@ -101,6 +101,8 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 	#file.write("(apply qflia)")
 	#file.write("(check-sat-using simplify)\n")
 	#file.write("(check-sat-using qflia)\n")
+	#file.write("(check-sat-using (with sat :phase always-false))\n")
+	#file.write("(check-sat-using (then simplify (with sat))\n")
 	file.write("(check-sat-using sat)\n")
 	for i in range(numCells):
 		for j in range(numMuts):
@@ -139,7 +141,6 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 				print("Error. Data entry in matrix " + fstr + " not equal to any of 0,1,2. EXITING !!!")
 				sys.exit(2)
 
-
 	# Constraint for not allowing removed columns go further than maxCol
 	if allow_col_elim:
 		for combo in combinations(range(numMuts), maxCol+1):
@@ -162,7 +163,6 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 						+getB(p,q,0,1)+") (not "+getB(p,q,1,0)+") (not "+getB(p,q,1,1)+")))")
 					else:	
 						file.write("(assert (or (not "+getB(p,q,0,1)+") (not "+getB(p,q,1,0)+") (not "+getB(p,q,1,1)+")))")
-					#add column elimination later
 
 	file.write("(check-sat)\n")
 	file.write("(get-model)\n")
@@ -237,7 +237,6 @@ if __name__ == "__main__":
 	parser.add_argument('-z3path', '--z3path',
 					type = str,
 					help = 'Path for Z3 solver')
-
 	args = parser.parse_args()
 
 	inFile = args.file
@@ -245,7 +244,6 @@ if __name__ == "__main__":
 	fp_weight = args.fpWeight
 	outDir = args.outDir
 	z3path = args.z3path
-
 	noisy_data = read_data(inFile)
 	row = noisy_data.shape[0]
 	col = noisy_data.shape[1]
@@ -253,7 +251,6 @@ if __name__ == "__main__":
 	logFile = outDir+'/'+inFile.split('/')[-1].replace(tale, 'log')
 	groundFile = args.ground
 	
-
 	if args.maxMut is not None:
 		maxCol = args.maxMut
 		allow_col_elim = True
@@ -266,12 +263,10 @@ if __name__ == "__main__":
 		real_data = True
 
 	log = open(logFile, 'w')
-	
 	log.write('SIM_ID: '+inFile.split('/')[-1]+'\n')
 	log.write('NUM_MUTATIONS(COLUMNS): '+str(col)+'\n')
 	log.write('NUM_ROWS(CELLS): '+str(row)+'\n')
 
-	
 	t0 = datetime.now()
 	produce_input(logFile.replace('log','temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
 	total_model = datetime.now()-t0
@@ -279,7 +274,6 @@ if __name__ == "__main__":
 	exe_command(logFile.replace('log','temp1'), z3path)
 	total_running = datetime.now()-t0
 	output_data, col_el = read_ouput(row, col, logFile.replace('log','temp2'), allow_col_elim)
-	#np.delete(output_data, col_el, axis=1)
 	
 	log.write('MODEL_BUILD_TIME_SECONDS: '+str(total_model.total_seconds())+'\n')
 	log.write('RUNNING_TIME_SECONDS: '+str(total_running.total_seconds())+'\n') 
