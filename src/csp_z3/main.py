@@ -13,12 +13,15 @@ def read_data(file):
 	return df.values
 
 
-def write_output(outresult, file):
+def write_output(outresult, file, col_el):
 	df = pd.DataFrame(outresult)
 	df = df.add_prefix('mut')
 	df.index = ['cell'+str(row) for row in df.index]
 	df.index.name = 'cellID/mutID'
+	col_el[:] = [x - 1 for x in col_el]
+	df.drop(df.columns[col_el], axis=1, inplace=True)
 	df.to_csv(file, sep='\t')
+	return df.values
 
 
 def compare_flips(inp, output, n, m, zeroToOne):
@@ -165,8 +168,8 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 	file.write("(get-model)\n")
 
 
-def exe_command(file):
-	command = "../../../z3-master/build/z3 -smt2 " + file + " > " + file.replace('temp1', 'temp2')
+def exe_command(file, z3path):
+	command = z3path + " -t:20000 -smt2 " + file + " > " + file.replace('temp1', 'temp2')
 	os.system(command)
 
 
@@ -228,12 +231,12 @@ if __name__ == "__main__":
 	parser.add_argument('-m', '--maxMut', #default = 0,
 						type = int,
 						help = 'Max number mutations to be eliminated [0]')
-	parser.add_argument('-c', '--maxCell',
-						type = int,
-						help = 'Max number cells to be eliminated [0]')
 	parser.add_argument('-t', '--threads',
 					type = int,
 					help = 'Number of threads [1]')
+	parser.add_argument('-z3path', '--z3path',
+					type = str,
+					help = 'Path for Z3 solver')
 
 	args = parser.parse_args()
 
@@ -241,11 +244,13 @@ if __name__ == "__main__":
 	fn_weight = args.fnWeight
 	fp_weight = args.fpWeight
 	outDir = args.outDir
+	z3path = args.z3path
 
 	noisy_data = read_data(inFile)
 	row = noisy_data.shape[0]
 	col = noisy_data.shape[1]
-	logFile = outDir+'/'+inFile.split('/')[-1].replace('.noisyMatrix', '.log')
+	tale = inFile.split('.')[-1]
+	logFile = outDir+'/'+inFile.split('/')[-1].replace(tale, 'log')
 	groundFile = args.ground
 	
 
@@ -268,12 +273,13 @@ if __name__ == "__main__":
 
 	
 	t0 = datetime.now()
-	produce_input(logFile.replace('.log','.temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
+	produce_input(logFile.replace('log','temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
 	total_model = datetime.now()-t0
 	t0 = datetime.now()
-	exe_command(logFile.replace('.log','.temp1'))
+	exe_command(logFile.replace('log','temp1'), z3path)
 	total_running = datetime.now()-t0
-	output_data, col_el = read_ouput(row, col, logFile.replace('.log','.temp2'), allow_col_elim)
+	output_data, col_el = read_ouput(row, col, logFile.replace('log','temp2'), allow_col_elim)
+	#np.delete(output_data, col_el, axis=1)
 	
 	log.write('MODEL_BUILD_TIME_SECONDS: '+str(total_model.total_seconds())+'\n')
 	log.write('RUNNING_TIME_SECONDS: '+str(total_running.total_seconds())+'\n') 
@@ -313,9 +319,8 @@ if __name__ == "__main__":
 		b = compare_ground_solution(ground_data, noisy_data, output_data, row, col, False)
 		log.write('TOTAL_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(a+b)+'\n')
 		log.write('0_1_0_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(a)+'\n')
-		log.write('1_0_1_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(b)+'\n')
+		log.write('1_0_1_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: '+str(b)+'\n')	
+
+	output_mat = write_output(output_data, logFile.replace('log','output'), col_el)
 	log.write('CONFLICT_FREE: '+str(check_conflict_free(output_data))+'\n')
 	log.write('NUM_THREADS: 1'+'\n')
-	log.write('CPU_CLOCK: 3.13 GHz'+'\n')
-	
-	write_output(output_data, logFile.replace('.log','.output'))
