@@ -1,13 +1,13 @@
 #!/bin/bash
 
-directory="../../data/simulated/17oct/ground"
+directory="../../data/simulated/19oct/ground"
 
-percentsFN=(0.05 0.1 0.15 0.2 0.25 0.3)
-percentsFP=(0.001 0.0001 0.00001)
-percentsNA=(0)
+percentsFN=(0.15 0.25)
+percentsFP=(0.0001)
+percentsNA=(0.15)
 percentsK=(0)
 
-files="$(find $directory -type f -name '*.txt' | sort)"
+files="$(find $directory -type f -name '*.groundTruthMatrix' | sort)"
 
 for f in ${files}
 do
