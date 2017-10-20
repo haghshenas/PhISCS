@@ -326,13 +326,13 @@ file_out.close()
 log = open('{0}.log'.format(outfile), 'w+')
 # --- Input info
 log.write('FILE_NAME: {0}\n'.format(str(os.path.basename(args.file))))
-log.write('NUM_ROWS(CELLS): {0}\n'.format(str(cells)))
+log.write('NUM_CELLS(ROWS): {0}\n'.format(str(cells)))
 log.write('NUM_MUTATIONS(COLUMNS): {0}\n'.format(str(mutations)))
 log.write('FN_WEIGHT: {0}\n'.format(str(fn_weight)))
-log.write('FN_WEIGHT: {0}\n'.format(str(fp_weight)))
+log.write('FP_WEIGHT: {0}\n'.format(str(fp_weight)))
 log.write('NUM_THREADS: {0}\n'.format(str(args.threads)))
-log.write('MODEL_SOLVING_TIME_SECONDS: {0}\n'.format(str(time_to_opt.total_seconds())))
-log.write('RUNNING_TIME_SECONDS: {0}\n'.format(str(time_to_run.total_seconds())))
+log.write('MODEL_SOLVING_TIME_SECONDS: {{0:.3f}}\n'.format(str(time_to_opt.total_seconds())))
+log.write('RUNNING_TIME_SECONDS: {{0:.3f}}\n'.format(str(time_to_run.total_seconds())))
 
 
 # --- DOUBLE-CHECK PP
@@ -372,11 +372,11 @@ log.write('2_0_FLIPS_REPORTED: {0}\n'.format(
 	str(sol_20_tot)))
 log.write('2_1_FLIPS_REPORTED: {0}\n'.format(
 	str(sol_21_tot)))
-log.write('UPPER_BOUND_COLUMNS_REMOVED: {0}\n'.format(
+log.write('MUTATIONS_REMOVED_UPPER_BOUND: {0}\n'.format(
 	str(args.maxMut)))
-log.write('COLUMNS REMOVED: {0}\n'. format(
+log.write('MUTATIONS_REMOVED_NUM: {0}\n'. format(
 	str(sum(removed_cols))))
-log.write('MUTATIONS REMOVED: {0}\n'.format(
+log.write('MUTATIONS_REMOVED_INDEX: {0}\n'.format(
 	','.join(removed_mutation_indeces)))
 
 log.close()
