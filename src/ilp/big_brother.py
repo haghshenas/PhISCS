@@ -29,9 +29,9 @@ parser.add_argument('-o', '--outDir', required = True,
 					help = 'Output directory')
 
 # Optional:
-parser.add_argument('-g', '--ground', default = None,
-					type = str,
-					help = 'Ground truth matrix [""]')
+# parser.add_argument('-g', '--ground', default = None,
+# 					type = str,
+# 					help = 'Ground truth matrix [""]')
 parser.add_argument('-m', '--maxMut', default = 0,
 					type = int,
 					help = 'Max number mutations to be eliminated [0]')
@@ -196,10 +196,12 @@ while p < mutations:
 time_to_model = datetime.now() - start_model
 # ====== OPTIMIZE
 start_optimize = datetime.now()
+
 model.optimize()
 
 # ====== POST OPTIMIZATION
 time_to_opt = datetime.now() - start_optimize
+time_to_run = datetime.now() - start_model
 
 if verbose:
 	print('-' * 20)
@@ -267,6 +269,7 @@ file_out = open('{0}.output'.format(outfile), 'w+')
 # --- Solution info
 removed_cols = []
 removed_mutation_names = []
+removed_mutation_indeces = []
 solution_mutation_names = []
 m = 0
 while m < mutations:
@@ -276,6 +279,7 @@ while m < mutations:
 		solution_mutation_names.append(mutation_names[m])
 	else:
 		removed_mutation_names.append(mutation_names[m])
+		roeoved_mutation_indeces.append(str(m+1))
 	m += 1
 
 file_out.write('cellID/mutID')
@@ -285,6 +289,8 @@ file_out.write('\n')
 if verbose:
 	print('-' * 20)
 	print('Result')
+sol_20_tot = 0
+sol_21_tot = 0
 sol_matrix = []
 c = 0
 while c < cells:
@@ -298,6 +304,10 @@ while c < cells:
 				row.append(1 - int(F1[c, m].X))
 			else:
 				row.append(int(X[c, m].X))
+				if int(X[c, m].X) == 0:
+					sol_20_tot += 1
+				else:
+					sol_21_tot += 1
 		m += 1
 	if verbose:
 		print(' '.join([str(x) for x in row]))
@@ -318,75 +328,12 @@ log = open('{0}.log'.format(outfile), 'w+')
 log.write('FILE_NAME: {0}\n'.format(str(os.path.basename(args.file))))
 log.write('NUM_ROWS(CELLS): {0}\n'.format(str(cells)))
 log.write('NUM_MUTATIONS(COLUMNS): {0}\n'.format(str(mutations)))
+log.write('FN_WEIGHT: {0}\n'.format(str(fn_weight)))
+log.write('FN_WEIGHT: {0}\n'.format(str(fp_weight)))
+log.write('NUM_THREADS: {0}\n'.format(str(args.threads)))
+log.write('MODEL_SOLVING_TIME_SECONDS: {0}\n'.format(str(time_to_opt.total_seconds())))
+log.write('RUNNING_TIME_SECONDS: {0}\n'.format(str(time_to_run.total_seconds())))
 
-# -- Ground info
-
-# ground_file = 'simID_{0}-n_{1}-m_50.txt'.format(
-# 	str(sim_id), str(arg_cell))
-# ground_matrix = np.genfromtxt(folder + '/ground/' + ground_file, skip_header=1, usecols=range(1, 51))
-#
-# flips_in_noisy = 0
-# flips01_in_noisy = 0
-# flips10_in_noisy = 0
-# flips01_matrix = np.zeros((cells, mutations))
-# flips10_matrix = np.zeros((cells, mutations))
-# for c in range(cells):
-# 	for m in range(mutations):
-# 		if ground_matrix[c,m] == 0 and matrix_input[c,m] == 1:
-# 			flips01_in_noisy += 1
-# 			flips_in_noisy += 1
-# 			flips01_matrix[c, m] = 1
-#
-# 		if ground_matrix[c,m] == 1 and matrix_input[c,m] == 0:
-# 			flips10_in_noisy += 1
-# 			flips_in_noisy += 1
-# 			flips10_matrix[c, m] = 1
-#
-# log.write('TOTAL_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: {0}\n'.format(
-# 	str(flips_in_noisy)))
-# log.write('0_1_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: {0}\n'.format(
-# 	str(flips01_in_noisy)))
-# log.write('1_0_FLIPS_INTRODUCED_BY_NOISY_COMPARED_TO_GROUND: {0}\n'.format(
-# 	str(flips10_in_noisy)))
-
-log.write('TOTAL_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
-	str(flip0_sol_tot + flip1_sol_tot)))
-log.write('0_1_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
-	str(flip0_sol_tot)))
-log.write('1_0_FLIPS_REPORTED_BY_SOLUTION_COMPARED_TO_NOISY: {0}\n'.format(
-	str(flip1_sol_tot)))
-log.write('UPPER_BOUND_COLUMNS_REMOVED: {0}\n'.format(
-	str(args.maxMut)))
-log.write('COLUMNS REMOVED: {0}\n'. format(
-	str(sum(removed_cols))))
-log.write('MUTATIONS REMOVED: {0}\n'.format(
-	','.join(removed_mutation_names)))
-
-# --- Overlap info
-
-# overlap010 = 0
-# overlap101 = 0
-# overlap_total = 0
-#
-# for c in range(cells):
-# 	for m in range(mutations):
-# 		if flips01_matrix[c, m] == 1 and flip1_matrix[c, m] == 1:
-# 			overlap010 += 1
-# 			overlap_total += 1
-# 		elif flips10_matrix[c, m] and flip0_matrix[c, m] == 1:
-# 			overlap101 += 1
-# 			overlap_total += 1
-# 		elif flips01_matrix[c, m] == 1 and flip1_matrix[c, m] == 1:
-# 			overlap_total += 1
-# 		elif flips10_matrix[c, m] == 1 and flip0_matrix[c, m] == 1:
-# 			overlap_total += 1
-#
-# log.write('TOTAL_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: {0}\n'.format(
-# 	str(overlap_total)))
-# log.write('0_1_0_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: {0}\n'.format(
-# 	str(overlap010)))
-# log.write('1_0_1_OVERLAP_NOISE_FLIPS_SOLUTION_FLIPS: {0}\n'.format(
-# 	str(overlap101)))
 
 # --- DOUBLE-CHECK PP
 conflict_free = True
@@ -408,10 +355,29 @@ for p in range(sol_matrix.shape[1]):
 			if verbose:
 				print('Conflict in columns (%d, %d)' % (p, q))
 
-log.write('CONFLICT_FREE: {0}\n'.format(str(conflict_free)))
-log.write('NUM_THREADS: {0}\n'.format(str(args.threads)))
-log.write('MODEL_BUILD_TIME_SECONDS: {0}\n'.format(str(time_to_model.total_seconds())))
-log.write('RUNNING_TIME_SECONDS: {0}\n'.format(str(time_to_opt.total_seconds())))
+if conflict_free:
+	conflict_free = 'YES'
+else:
+	conflict_free = 'NO'
+
+log.write('CONFLICT_FREE: {0}\n'.format(conflict_free))
+
+log.write('TOTAL_FLIPS_REPORTED: {0}\n'.format(
+	str(flip0_sol_tot + flip1_sol_tot)))
+log.write('0_1_FLIPS_REPORTED: {0}\n'.format(
+	str(flip0_sol_tot)))
+log.write('1_0_FLIPS_REPORTED: {0}\n'.format(
+	str(flip1_sol_tot)))
+log.write('2_0_FLIPS_REPORTED: {0}\n'.format(
+	str(sol_20_tot)))
+log.write('2_1_FLIPS_REPORTED: {0}\n'.format(
+	str(sol_21_tot)))
+log.write('UPPER_BOUND_COLUMNS_REMOVED: {0}\n'.format(
+	str(args.maxMut)))
+log.write('COLUMNS REMOVED: {0}\n'. format(
+	str(sum(removed_cols))))
+log.write('MUTATIONS REMOVED: {0}\n'.format(
+	','.join(removed_mutation_indeces)))
 
 log.close()
 
