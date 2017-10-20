@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <getopt.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -18,10 +19,14 @@ using namespace std;
 #define MAX_CELL 300
 #define MAX_MUT 200
 
-bool IS_WCNF = true;
-int  FN_W = 0;
-int  FP_W = 0;
-int  NUM_THREAD = 1;
+string  par_inputFile = "";
+string  par_outDir = "";
+int     par_fnWeight = -1;
+int     par_fpWeight = -1;
+int     par_maxColRemove = 0;
+int     par_threads = 1;
+bool    IS_PWCNF = true;
+string  MAX_SOLVER = "openwbo";
 
 int mat[MAX_CELL][MAX_MUT]; // the 0/1 matrix
 vector<string> cellId;
@@ -42,17 +47,138 @@ int numOne; // number of ones in the input matrix
 
 string int2str(int n)
 {
-	ostringstream sout;
-	sout<< n;
-	return sout.str();
+    ostringstream sout;
+    sout<< n;
+    return sout.str();
 }
 
 int str2int(string s)
 {
-	int retVal;
-	istringstream sin(s.c_str());
-	sin >> retVal;
-	return retVal;
+    int retVal;
+    istringstream sin(s.c_str());
+    sin >> retVal;
+    return retVal;
+}
+
+void print_usage()
+{
+    cout<< endl
+        << "usage: csp_maxsat [-h] -f FILE -n FNWEIGHT -p FPWEIGHT -o OUTDIR" << endl
+        << "                  [-m MAXMUT] [-t THREADS]" << endl;
+}
+
+void print_help()
+{
+    cout<< endl
+        << "Required arguments:" << endl
+        << "   -f, --file     STR        Input matrix file" << endl
+        << "   -n, --fnWeight INT        Weight for false negative" << endl
+        << "   -p, --fpWeight INT        Weight for false negative" << endl
+        << "   -o, --outDir   STR        Output directory" << endl
+        << endl
+        << "Optional arguments:" << endl
+        << "   -m, --maxMut   INT        Max number mutations to be eliminated [0]" << endl
+        << "   -t, --threads  INT        Number of threads [1]" << endl
+        << endl
+        << "Other arguments:" << endl
+        << "   -h, --help                Show this help message and exit" << endl;
+}
+
+bool command_line_parser(int argc, char *argv[])
+{
+    int index;
+    char c;
+    static struct option longOptions[] = 
+    {
+    //     {"progress",                no_argument,        &progressRep,       1},
+        {"file",                   required_argument,  0,                  'f'},
+        {"fnWeight",               required_argument,  0,                  'n'},
+        {"fnWeight",               required_argument,  0,                  'p'},
+        {"outDir",                 required_argument,  0,                  'o'},
+        {"maxMut",                 required_argument,  0,                  'm'},
+        {"threads",                required_argument,  0,                  't'},
+        {"help",                   no_argument,        0,                  'h'},
+        {0,0,0,0}
+    };
+
+    while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:t:h", longOptions, &index))!= -1 )
+    {
+        switch (c)
+        {
+            case 'f':
+                par_inputFile = optarg;
+                break;
+            case 'n':
+                par_fnWeight = str2int(optarg);
+                if(par_fnWeight < 1)
+                {
+                    cerr<< "[ERROR] Weight for false negative should be an integer >= 1" << endl;
+                    return false;
+                }
+                break;
+            case 'p':
+                par_fpWeight = str2int(optarg);
+                if(par_fpWeight < 1)
+                {
+                    cerr<< "[ERROR] Weight for false positive should be an integer >= 1" << endl;
+                    return false;
+                }
+                break;
+            case 'o':
+                par_outDir = optarg;
+                break;
+            case 'm':
+                par_maxColRemove = str2int(optarg);
+                if(par_maxColRemove < 0)
+                {
+                    cerr<< "[ERROR] Maximum number of mutation removal should be an integer >= 0" << endl;
+                    return false;
+                }
+                break;
+            case 't':
+                par_threads = str2int(optarg);
+                if(par_threads != 1)
+                {
+                    cerr<< "[ERROR] Only single thread is supported at the moment!" << endl;
+                    return false;
+                }
+                break;
+            case 'h':
+                print_usage();
+                print_help();
+                exit(EXIT_SUCCESS);
+        }
+    }
+
+    if(par_inputFile == "")
+    {
+        cerr<< "[ERROR] option -f/--file is required" << endl;
+        print_usage();
+        return false;
+    }
+
+    if(par_outDir == "")
+    {
+        cerr<< "[ERROR] option -o/--outDir is required" << endl;
+        print_usage();
+        return false;
+    }
+
+    if(par_fnWeight < 0)
+    {
+        cerr<< "[ERROR] option -n/--fnWeight is required" << endl;
+        print_usage();
+        return false;
+    }
+
+    if(par_fpWeight < 0)
+    {
+        cerr<< "[ERROR] option -p/--fpWeight is required" << endl;
+        print_usage();
+        return false;
+    }
+
+    return true;
 }
 
 void get_input_data(string path)
@@ -107,13 +233,13 @@ void set_xy_variables()
 			if(mat[i][j] == 0)
 			{
 				var_y[i][j] = var_x[i][j];
-				weight_x[i][j] = FN_W;
+				weight_x[i][j] = par_fnWeight;
 				numZero++;
 			}
 			else // mat[i][j] == 1
 			{
 				var_y[i][j] = -1 * var_x[i][j];
-				weight_x[i][j] = FP_W;
+				weight_x[i][j] = par_fpWeight;
 				numOne++;
 			}
 		}
@@ -166,15 +292,15 @@ void add_hard_clauses()
 void save_WCNF(string path)
 {
 	int i, j;
-	int hardWeight = numZero * FN_W + numOne * FP_W + 1;
+	int hardWeight = numZero * par_fnWeight + numOne * par_fpWeight + 1;
 	ofstream fout(path.c_str());
-	if(IS_WCNF)
+	if(IS_PWCNF)
 	{
-		fout<< "p wcnf " << numVar + numAuxVar << " " << wcnf.size() + numVar << "\n";
+        fout<< "p wcnf " << numVar + numAuxVar << " " << wcnf.size() + numVar << " " << hardWeight << "\n";
 	}
 	else
 	{
-		fout<< "p wcnf " << numVar + numAuxVar << " " << wcnf.size() + numVar << " " << hardWeight << "\n";
+        fout<< "p wcnf " << numVar + numAuxVar << " " << wcnf.size() + numVar << "\n";
 	}
 	// y variable clauses
 	for(i = 1; i <= numVar; i++)
@@ -310,42 +436,33 @@ double getRealTime()
 
 int main(int argc, char *argv[])
 {
-	if(argc < 7)
-	{
-		cerr << "Wrong arguments!" << endl;
-		cerr << "USAGE: ./runMaxSAT noisyMatrix.in outputDir wcnf/pwcnf qmaxsat/openwbo fn_weight fp_weight" << endl;
-		exit(EXIT_FAILURE);
-	}
-	// int i, j, k;
-	// int p, q;
+    if(argc <= 1)
+    {
+        print_usage();
+        exit(EXIT_FAILURE);
+    }
+    if(command_line_parser(argc, argv) == false)
+    {
+        exit(EXIT_FAILURE);
+    }
+
 	string cmd;
     
     string exeDir = get_dir_path(get_exe_path());
-    string pathNoisy = argv[1];
-    string workingDir = argv[2];
-    // wcnf or pwcnf
-    string arg_str = argv[3];
-    if(arg_str == "wcnf")
-    	IS_WCNF = true;
-    else
-    	IS_WCNF = false;
     // qmaxsat or openwbo
-    arg_str = argv[4];
     string maxSAT_exe;
-    if(arg_str == "qmaxsat")
+    if(MAX_SOLVER == "qmaxsat")
     	maxSAT_exe = exeDir + "/solver/qmaxsat/qmaxsat14.04auto-glucose3_static";
-    else if(arg_str == "openwbo")
+    else if(MAX_SOLVER == "openwbo")
     	maxSAT_exe = exeDir + "/solver/open-wbo/open-wbo_glucose4.1_static";
     else
     	maxSAT_exe = "noSolver";
-    // fn and fp weight
-    FN_W = str2int(argv[5]);
-    FP_W = str2int(argv[6]);
 
     // create working directory if does not exist
-    cmd = "mkdir -p " + workingDir;
+    // FIXME: use a more portable mkdir... int mkdir(const char *path, mode_t mode);
+    cmd = "mkdir -p " + par_outDir;
     system(cmd.c_str());
-    string fileName = workingDir + "/" + get_file_name(pathNoisy);
+    string fileName = par_outDir + "/" + get_file_name(par_inputFile);
 
     ofstream fLog((fileName + ".log").c_str());
     if(fLog.is_open() == false)
@@ -359,13 +476,13 @@ int main(int argc, char *argv[])
     // double cpuTime = getCpuTime();
 	double realTime = getRealTime();
 
-	get_input_data(pathNoisy);
-    fLog<< "FILE_NAME: " << get_file_name(pathNoisy) << "\n";
+	get_input_data(par_inputFile);
+    fLog<< "FILE_NAME: " << get_file_name(par_inputFile) << "\n";
     fLog<< "NUM_CELLS(ROWS): " << numCell << "\n";
     fLog<< "NUM_MUTATIONS(COLUMNS): " << numMut << "\n";
-    fLog<< "FN_WEIGHT: " << FN_W << "\n";
-    fLog<< "FP_WEIGHT: " << FP_W << "\n";
-    fLog<< "NUM_THREADS: " << NUM_THREAD << "\n";
+    fLog<< "FN_WEIGHT: " << par_fnWeight << "\n";
+    fLog<< "FP_WEIGHT: " << par_fpWeight << "\n";
+    fLog<< "NUM_THREADS: " << par_threads << "\n";
 	// formulate as Max-SAT
 	set_xy_variables();
 	set_b_variables();
@@ -389,7 +506,7 @@ int main(int argc, char *argv[])
     }
 
     // solution is found, save it!
-    save_updated_matrix(fileName + ".updated");
+    save_updated_matrix(fileName + ".output");
     fLog<< "MODEL_SOLVING_TIME_SECONDS: " << maxsatTime << "\n";
     fLog<< "RUNNING_TIME_SECONDS: " << getRealTime() - realTime << "\n";
     fLog<< "IS_CONFLICT_FREE: " << "YES" << "\n"; // FIXME: write the function
