@@ -128,12 +128,12 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 		for j in range(numMuts):
 			if data[i][j] == 0:
 				file.write("(assert-soft (= "+getX(i,j)+" true) :weight -"+str(fn_weight)+ ")\n")
-				file.write("(assert (= "+getX(i,j)+" "+getY(i,j)+"))")
+				file.write("(assert (= "+getX(i,j)+" "+getY(i,j)+"))\n")
 			elif data[i][j] == 1:
 				file.write("(assert-soft (= "+getX(i,j)+" true) :weight -"+str(fp_weight)+")\n")
-				file.write("(assert (not (= "+getX(i,j)+" "+getY(i,j)+")))")
+				file.write("(assert (not (= "+getX(i,j)+" "+getY(i,j)+")))\n")
 			elif data[i][j] == 2:# NA Values
-				file.write("(assert (= "+getX(i,j)+" "+getY(i,j)+"))")
+				file.write("(assert (= "+getX(i,j)+" "+getY(i,j)+"))\n")
 				#file.write("(assert-soft (= X_"+str(i)+"_"+str(j)+" true) :weight -"+str((data[:,j]==0).sum())+")\n")
 				#file.write("(assert-soft (= X_"+str(i)+"_"+str(j)+" false) :weight -"+str((data[:,j]==1).sum())+")\n")
 				#file.write("(assert (= "+getX(i,j)+" true))\n")
@@ -162,16 +162,17 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 					file.write("(assert (or (not "+getY(i,p)+")  "+getY(i,q)+" "+getB(p,q,1,0)+"))\n")
 					if allow_col_elim:
 						file.write("(assert (or "+getK(p)+" "+getK(q)+" (not "
-						+getB(p,q,0,1)+") (not "+getB(p,q,1,0)+") (not "+getB(p,q,1,1)+")))")
+						+getB(p,q,0,1)+") (not "+getB(p,q,1,0)+") (not "+getB(p,q,1,1)+")))\n")
 					else:	
-						file.write("(assert (or (not "+getB(p,q,0,1)+") (not "+getB(p,q,1,0)+") (not "+getB(p,q,1,1)+")))")
+						file.write("(assert (or (not "+getB(p,q,0,1)+") (not "+getB(p,q,1,0)+") (not "+getB(p,q,1,1)+")))\n")
 
 	file.write("(check-sat)\n")
 	file.write("(get-model)\n")
 
 
 def exe_command(file, z3path):
-	command = z3path + " -t:20000 -smt2 " + file + " > " + file.replace('temp1', 'temp2')
+	#command = z3path + " -t:20000 -smt2 " + file + " > " + file.replace('temp1', 'temp2')
+	command = z3path + " -smt2 " + file + " > " + file.replace('temp1', 'temp2')
 	os.system(command)
 
 
