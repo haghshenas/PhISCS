@@ -213,7 +213,7 @@ def read_ouput(n, m, fstr, allow_col_elim):
 
 
 if __name__ == "__main__":
-
+	t0 = datetime.now()
 	parser = argparse.ArgumentParser(description='CSP by Z3 solver', add_help=True)
 	parser.add_argument('-f', '--file', required = True,
 						type = str,
@@ -269,12 +269,16 @@ if __name__ == "__main__":
 		allow_col_elim = False
 	
 	log = open(logFile, 'w')
-	t0 = datetime.now()
 	produce_input(logFile.replace('log','temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
 	t1 = datetime.now()
 	exe_command(logFile.replace('log','temp1'), z3path)
 	total_model = datetime.now()-t1
 	output_data, col_el = read_ouput(row, col, logFile.replace('log','temp2'), allow_col_elim)
+	output_mat = write_output(output_data, logFile.replace('log','output'), col_el)
+	command = "rm "+outDir+"/*.temp1"
+	os.system(command)
+	command = "rm "+outDir+"/*.temp2"
+	os.system(command)
 	total_running = datetime.now()-t0
 	
 	log.write('FILE_NAME: '+inFile.split('/')[-1]+'\n')
@@ -283,8 +287,8 @@ if __name__ == "__main__":
 	log.write('FN_WEIGHT: '+str(fn_weight)+'\n')
 	log.write('FP_WEIGHT: '+str(fp_weight)+'\n')
 	log.write('NUM_THREADS: '+str(1)+'\n')
-	log.write('MODEL_SOLVING_TIME_SECONDS: '+str(total_model.total_seconds())+'\n')
-	log.write('RUNNING_TIME_SECONDS: '+str(total_running.total_seconds())+'\n')
+	log.write('MODEL_SOLVING_TIME_SECONDS: '+str("{0:.3f}".format(total_model.total_seconds()))+'\n')
+	log.write('RUNNING_TIME_SECONDS: '+str("{0:.3f}".format(total_running.total_seconds()))+'\n')
 	log.write('IS_CONFLICT_FREE: '+str(check_conflict_free(output_data))+'\n')
 	a = compare_flips(noisy_data, output_data, row, col, True)
 	b = compare_flips(noisy_data, output_data, row, col, False)
@@ -295,13 +299,8 @@ if __name__ == "__main__":
 	log.write('1_0_FLIPS_REPORTED: '+str(b)+'\n')
 	log.write('2_0_FLIPS_REPORTED: '+str(c)+'\n')
 	log.write('2_1_FLIPS_REPORTED: '+str(d)+'\n')
-	log.write('MUTATIONS_REMOVED_UPPER_BOUND:'+str(maxCol)+'\n')
+	log.write('MUTATIONS_REMOVED_UPPER_BOUND: '+str(maxCol)+'\n')
 	log.write('MUTATIONS_REMOVED_NUM: '+str(len(col_el))+'\n')
 	temp = 'MUTATIONS_REMOVED_INDEX: '+ "," . join([str(i) for i in sorted(col_el)])
 	log.write(temp+'\n')
 	
-	output_mat = write_output(output_data, logFile.replace('log','output'), col_el)
-	command = "rm "+outDir+"/*.temp1"
-	os.system(command)
-	command = "rm "+outDir+"/*.temp2"
-	os.system(command)
