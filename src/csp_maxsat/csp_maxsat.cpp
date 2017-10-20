@@ -386,17 +386,24 @@ void save_updated_matrix(string path)
     fout.close();
 }
 
-string get_file_name(string path)
+string get_file_name(string path, bool removExtension = false)
 {
-    size_t pos = path.find_last_of("/");
+    string fileName;
+    size_t pos;
+    // extract file name
+    pos = path.find_last_of("/");
     if(pos != string::npos)
-    {
-        return path.substr(pos+1);
-    }
+        fileName = path.substr(pos+1);
     else
+        fileName = path;
+    // remove extension
+    if(removExtension)
     {
-        return path;
+        pos = fileName.find_last_of(".");
+        if(pos != string::npos)
+            fileName = fileName.substr(0, pos);
     }
+    return fileName;
 }
 
 string get_dir_path(string path)
@@ -462,7 +469,7 @@ int main(int argc, char *argv[])
     // FIXME: use a more portable mkdir... int mkdir(const char *path, mode_t mode);
     cmd = "mkdir -p " + par_outDir;
     system(cmd.c_str());
-    string fileName = par_outDir + "/" + get_file_name(par_inputFile);
+    string fileName = par_outDir + "/" + get_file_name(par_inputFile, true);
 
     ofstream fLog((fileName + ".log").c_str());
     if(fLog.is_open() == false)
