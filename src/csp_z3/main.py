@@ -295,11 +295,10 @@ if __name__ == "__main__":
 	log.write('1_0_FLIPS_REPORTED: '+str(b)+'\n')
 	log.write('2_0_FLIPS_REPORTED: '+str(c)+'\n')
 	log.write('2_1_FLIPS_REPORTED: '+str(d)+'\n')
-	if allow_col_elim:
-		log.write('MUTATIONS_REMOVED_UPPER_BOUND:'+str(maxCol)+'\n')
-		log.write('MUTATIONS_REMOVED_NUM: '+str(len(col_el))+'\n')
-		temp = 'MUTATIONS_REMOVED_INDEX: '+ "," . join([str(i) for i in col_el])
-		log.write(temp+'\n')
+	log.write('MUTATIONS_REMOVED_UPPER_BOUND:'+str(maxCol)+'\n')
+	log.write('MUTATIONS_REMOVED_NUM: '+str(len(col_el))+'\n')
+	temp = 'MUTATIONS_REMOVED_INDEX: '+ "," . join([str(i) for i in sorted(col_el)])
+	log.write(temp+'\n')
 	
 	output_mat = write_output(output_data, logFile.replace('log','output'), col_el)
 	command = "rm "+outDir+"/*.temp1"
