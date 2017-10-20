@@ -470,7 +470,7 @@ int main(int argc, char *argv[])
         cerr<< "Could not open file: " << fileName + ".log" << endl;
         exit(EXIT_FAILURE);
     }
-    fLog.precision(2);
+    fLog.precision(3);
     fLog<< fixed;
 
     // double cpuTime = getCpuTime();
