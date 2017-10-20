@@ -331,8 +331,8 @@ log.write('NUM_MUTATIONS(COLUMNS): {0}\n'.format(str(mutations)))
 log.write('FN_WEIGHT: {0}\n'.format(str(fn_weight)))
 log.write('FP_WEIGHT: {0}\n'.format(str(fp_weight)))
 log.write('NUM_THREADS: {0}\n'.format(str(args.threads)))
-log.write('MODEL_SOLVING_TIME_SECONDS: {{0:.3f}}\n'.format(str(time_to_opt.total_seconds())))
-log.write('RUNNING_TIME_SECONDS: {{0:.3f}}\n'.format(str(time_to_run.total_seconds())))
+log.write('MODEL_SOLVING_TIME_SECONDS: {0:.3f}\n'.format(time_to_opt.total_seconds()))
+log.write('RUNNING_TIME_SECONDS: {0:.3f}\n'.format(time_to_run.total_seconds()))
 
 
 # --- DOUBLE-CHECK PP
