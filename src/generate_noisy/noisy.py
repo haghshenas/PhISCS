@@ -6,7 +6,7 @@ import math
 
 def read_data(file):
 	df = pd.read_table(file)
-	df.drop('cellID_x_mutID', axis=1, inplace=True)
+	df.drop('cellID/mutID', axis=1, inplace=True)
 	return df.values
 
 def write_noisy_both(outresult, file, percfn, percfp, percna):
