@@ -606,7 +606,7 @@ int main(int argc, char *argv[])
     fLog<< "MODEL_SOLVING_TIME_SECONDS: " << maxsatTime << "\n";
     fLog<< "RUNNING_TIME_SECONDS: " << getRealTime() - realTime << "\n";
     fLog<< "IS_CONFLICT_FREE: " << "YES" << "\n"; // FIXME: write the function
-    fLog<< "TOTAL_FLIPS_REPORTED: " << numFlip << "\n";
+    fLog<< "TOTAL_FLIPS_REPORTED: " << numFlip01 + numFlip10 << "\n";
     fLog<< "0_1_FLIPS_REPORTED: " << numFlip01 << "\n";
     fLog<< "1_0_FLIPS_REPORTED: " << numFlip10 << "\n";
     fLog<< "2_0_FLIPS_REPORTED: " << numFlip20 << "\n"; // FIXME: 
