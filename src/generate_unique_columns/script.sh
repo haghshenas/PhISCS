@@ -1,7 +1,6 @@
 #!/bin/bash
 
-files="$(find ~/Desktop/result/6sep/z3-5/ -type f -name '*.txt' | sort)"
-#files="$(find ./input/ground -type f -name '*.txt' | grep 'simID_1-n_50-m_50' | sort)"
+files="$(find ~/Desktop/result -type f -name '*.output' | sort)"
 
 for f in ${files}
 do
