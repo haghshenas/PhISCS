@@ -6,13 +6,13 @@ import math
 
 def read_data(file):
 	df = pd.read_table(file)
-	df.drop('cellID/mutID', axis=1, inplace=True)
+	df.drop('cellID_x_mutID', axis=1, inplace=True)
 	return df.values
 
-def write_noisy_both(outresult, file, percfn, percfp, percna, perck):
+def write_noisy_both(outresult, file, percfn, percfp, percna):
 	file = file.replace('ground','noisy')
-	file = file.replace('-k_0.noisyTruthMatrix','')
-	f = file+'-fn_'+percfn+'-fp_'+percfp+'-na_'+percna+'-k_'+perck+'.noisyMatrix'
+	file = file.replace('.SCnoNoise','')
+	f = file+'-fn_'+percfn+'-fp_'+percfp+'-na_'+percna+'.SCnoisy'
 	df = pd.DataFrame(outresult)
 	df = df.add_prefix('mut')
 	df.index = ['cell'+str(row) for row in df.index]
@@ -81,10 +81,8 @@ if __name__ == "__main__":
 	percfn = sys.argv[2]
 	percfp = sys.argv[3]
 	percna = sys.argv[4]
-	perck = sys.argv[5]
 	
 	data = read_data(file)
 	
-	#data = introduce_false_both(data, n, m, float(percfn), float(percfp), float(percna), float(perck))
 	data = introduce_false_both(data, data.shape[0], data.shape[1], float(percfn), float(percfp), float(percna))
-	write_noisy_both(data, file, percfn, percfp, percna, perck)
+	write_noisy_both(data, file, percfn, percfp, percna)

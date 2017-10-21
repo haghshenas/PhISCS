@@ -1,13 +1,12 @@
 #!/bin/bash
 
-directory="../../data/simulated/19oct/ground"
+directory="../../data/simulated/21oct/ground"
 
 percentsFN=(0.15 0.25)
 percentsFP=(0.0001)
 percentsNA=(0.15)
-percentsK=(0)
 
-files="$(find $directory -type f -name '*.groundTruthMatrix' | sort)"
+files="$(find $directory -type f -name '*.SCnoNoise' | sort)"
 
 for f in ${files}
 do
@@ -21,11 +20,7 @@ do
 			for na in ${percentsNA[@]}
 			do
 				echo "NA: "$na
-				for k in ${percentsK[@]}
-				do
-					echo "K: "$k
-					python2 noisy.py $f $fn $fp $na $k
-				done
+				python2 noisy.py $f $fn $fp $na
 			done
 		done
 	done
