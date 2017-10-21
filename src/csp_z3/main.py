@@ -295,7 +295,7 @@ if __name__ == "__main__":
 	b = compare_flips(noisy_data, output_data, row, col, False)
 	c = compare_na(noisy_data, output_data, row, col, True)
 	d = compare_na(noisy_data, output_data, row, col, False)
-	log.write('TOTAL_FLIPS_REPORTED: '+str(a+b+c+d)+'\n')
+	log.write('TOTAL_FLIPS_REPORTED: '+str(a+b)+'\n')
 	log.write('0_1_FLIPS_REPORTED: '+str(a)+'\n')
 	log.write('1_0_FLIPS_REPORTED: '+str(b)+'\n')
 	log.write('2_0_FLIPS_REPORTED: '+str(c)+'\n')

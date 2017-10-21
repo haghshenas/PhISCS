@@ -360,7 +360,7 @@ if conflict_free:
 else:
 	conflict_free = 'NO'
 
-log.write('CONFLICT_FREE: {0}\n'.format(conflict_free))
+log.write('IS_CONFLICT_FREE: {0}\n'.format(conflict_free))
 
 log.write('TOTAL_FLIPS_REPORTED: {0}\n'.format(
 	str(flip0_sol_tot + flip1_sol_tot)))
