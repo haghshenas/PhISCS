@@ -3,7 +3,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 
 file1 <- args[1]
-file2 <- gsub(".txt",".outputMatrixUniqueColumns",file1)
+file2 <- gsub(".output",".outputMatrixUniqueColumns",file1)
 
 train = read.table(file1, header=TRUE)
 row.names(train) <- train[,1]
