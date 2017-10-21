@@ -264,7 +264,11 @@ if __name__ == "__main__":
 	
 	if args.maxMut is not None:
 		maxCol = args.maxMut
-		allow_col_elim = True
+		if maxCol == 0:
+			maxCol = 0
+			allow_col_elim = False
+		else:
+			allow_col_elim = True
 	else:
 		maxCol = 0
 		allow_col_elim = False
