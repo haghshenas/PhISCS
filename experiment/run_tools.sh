@@ -9,8 +9,8 @@ cmdMAX="../src/csp_maxsat/csp_maxsat"
 # timeLimit=3600
 timeLimit=600
 
-maxSimNo=10
-# maxSimNo=1
+# maxSimNo=10
+maxSimNo=2
 nList=(100)
 mList=(40)
 # sList=(4 7)
