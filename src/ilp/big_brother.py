@@ -282,7 +282,7 @@ while m < mutations:
 		roeoved_mutation_indeces.append(str(m+1))
 	m += 1
 
-file_out.write('cellID/mutID')
+file_out.write('cellID/mutID\t')
 file_out.write('\t'.join(solution_mutation_names))
 file_out.write('\n')
 
