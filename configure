@@ -1,11 +1,10 @@
 #!/bin/sh
 
-# make -C src/csp_maxsat
-
-echo $PWD
 # get submodules
 git submodule update --init --recursive
 
+# make z3
+
+# make codes
 (cd src/csp_maxsat; make)
 
-echo $PWD
