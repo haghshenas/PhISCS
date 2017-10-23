@@ -2,3 +2,4 @@
 gurobi.log
 src/csp_maxsat/csp_maxsat
 *.pyc
+experiment/results
