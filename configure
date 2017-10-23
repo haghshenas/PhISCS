@@ -4,6 +4,8 @@
 git submodule update --init --recursive
 
 # make z3
+(cd src/thirdParty/z3; ./configure)
+(cd src/thirdParty/z3/build; make -j4)
 
 # make codes
 (cd src/csp_maxsat; make)
