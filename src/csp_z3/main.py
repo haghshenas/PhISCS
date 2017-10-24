@@ -49,19 +49,6 @@ def compare_na(inp, output, n, m, twoToZero):
 	return totalflip
 
 
-def compare_ground_solution(minput, mnoisy, moutput, n, m, zeroToOne):
-	totalflip = 0
-	for i in range(n):
-		for j in range(m):
-			if zeroToOne:
-				if minput[i][j] == 0 and mnoisy[i][j] == 1 and moutput[i][j] == 0:
-					totalflip = totalflip + 1
-			else:
-				if minput[i][j] == 1 and mnoisy[i][j] == 0 and moutput[i][j] == 1:
-					totalflip = totalflip + 1
-	return totalflip
-
-
 def check_conflict_free(sol_matrix):
 	conflict_free = True
 	for p in range(sol_matrix.shape[1]):
@@ -170,9 +157,9 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 	file.write("(get-model)\n")
 
 
-def exe_command(file, z3path):
-	#command = z3path + " -t:20000 -smt2 " + file + " > " + file.replace('temp1', 'temp2')
-	command = z3path + " -smt2 " + file + " > " + file.replace('temp1', 'temp2')
+def exe_command(file):
+	#command = " -t:20000 -smt2 " + file + " > " + file.replace('temp1', 'temp2')
+	command = '../thirdParty/z3/build/z3 -smt2 ' + file + " > " + file.replace('temp1', 'temp2')
 	os.system(command)
 
 
@@ -228,31 +215,23 @@ if __name__ == "__main__":
 	parser.add_argument('-o', '--outDir', required = True,
 						type = str,
 						help = 'Output directory')
-	parser.add_argument('-g', '--ground',
-						type = str,
-						help = 'Ground truth matrix [""]')
 	parser.add_argument('-m', '--maxMut', #default = 0,
 						type = int,
 						help = 'Max number mutations to be eliminated [0]')
 	parser.add_argument('-t', '--threads',
 					type = int,
 					help = 'Number of threads [1]')
-	parser.add_argument('-z3path', '--z3path',
-					type = str,
-					help = 'Path for Z3 solver')
 	args = parser.parse_args()
 
 	inFile = args.file
 	fn_weight = args.fnWeight
 	fp_weight = args.fpWeight
 	outDir = args.outDir
-	z3path = args.z3path
 	noisy_data = read_data(inFile)
 	row = noisy_data.shape[0]
 	col = noisy_data.shape[1]
 	tale = inFile.split('.')[-1]
 	logFile = outDir+'/'+inFile.split('/')[-1].replace(tale, 'log')
-	groundFile = args.ground
 
 	try:
 		os.makedirs(outDir)
@@ -276,7 +255,7 @@ if __name__ == "__main__":
 	log = open(logFile, 'w')
 	produce_input(logFile.replace('log','temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
 	t1 = datetime.now()
-	exe_command(logFile.replace('log','temp1'), z3path)
+	exe_command(logFile.replace('log','temp1'))
 	total_model = datetime.now()-t1
 	output_data, col_el = read_ouput(row, col, logFile.replace('log','temp2'), allow_col_elim)
 	output_mat = write_output(output_data, logFile.replace('log','output'), col_el)
