@@ -305,7 +305,7 @@ if __name__ == "__main__":
 	col = noisy_data.shape[1]
 	tale = inFile.split('.')[-1]
 	logFile = outDir+'/'+inFile.split('/')[-1].replace(tale, 'log')
-	timeOut = 31
+	timeOut = 0
 
 	try:
 		os.makedirs(outDir)
