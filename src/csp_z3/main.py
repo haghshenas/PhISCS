@@ -262,9 +262,9 @@ if __name__ == "__main__":
 	total_model = datetime.now()-t1
 	output_data, col_el = read_ouput(row, col, logFile.replace('log','temp2'), allow_col_elim)
 	output_mat = write_output(output_data, logFile.replace('log','output'), col_el)
-	command = "rm "+outDir+"/*.temp1"
+	command = "rm " + os.path.splitext(logFile)[0]+'.temp1'
 	os.system(command)
-	command = "rm "+outDir+"/*.temp2"
+	command = "rm " + os.path.splitext(logFile)[0]+'.temp2'
 	os.system(command)
 	total_running = datetime.now()-t0
 	
