@@ -35,6 +35,7 @@ int var_x[MAX_CELL][MAX_MUT]; // X variables for the maxSAT
 int var_y[MAX_CELL][MAX_MUT]; // Y variables for the maxSAT; if(Iij==0) Yij=Xij and if(Iij==1) Yij=~Xij
 int weight_x[MAX_CELL][MAX_MUT]; // weight of X variables
 int var_b[MAX_MUT][MAX_MUT][2][2];
+int var_k[MAX_MUT];
 pair<int, int> map_y2ij[MAX_CELL * MAX_MUT + 10]; // maps Y variables to matrix position (row and column)
 vector<string> clauseSoft; // the set of soft clauses for wcnf formulation
 vector<string> clauseHard; // the set of soft clauses for wcnf formulation
@@ -43,7 +44,8 @@ int numMut; // actual number of mutations (columns)
 int numCell; // actual number of cells (rows)
 int numVarY; // number of Y variables
 int numVarX; // number of X variables
-int numVarB; // number of X variables
+int numVarB; // number of B variables
+int numVarK; // number of K variables
 int numZero; // number of zeros in the input matrix
 int numOne; // number of ones in the input matrix
 int numTwo; // number of twos in the input matrix
@@ -253,23 +255,35 @@ void set_x_variables()
 
 void set_b_variables()
 {
-	int i, j, p, q;
-	numVarB = 0;
+    int i, j, p, q;
+    numVarB = 0;
 
-	for(p = 0; p < numMut; p++)
-	{
-		for(q = 0; q < numMut; q++)
-		{
-			for(i = 0; i < 2; i++)
-			{
-				for(j = 0; j < 2; j++)
-				{
-					numVarB++;
-					var_b[p][q][i][j] = numVarY + numVarX + numVarB;
-				}
-			}
-		}
-	}
+    for(p = 0; p < numMut; p++)
+    {
+        for(q = 0; q < numMut; q++)
+        {
+            for(i = 0; i < 2; i++)
+            {
+                for(j = 0; j < 2; j++)
+                {
+                    numVarB++;
+                    var_b[p][q][i][j] = numVarY + numVarX + numVarB;
+                }
+            }
+        }
+    }
+}
+
+void set_k_variables()
+{
+    int p;
+    numVarK = 0;
+
+    for(p = 0; p < numMut; p++)
+    {
+        numVarK++;
+        var_k[p] = numVarY + numVarX + numVarB + numVarK;
+    }
 }
 
 void add_variable_clauses()
@@ -327,11 +341,60 @@ void add_conflict_clauses()
 				clauseHard.push_back(int2str(var_y[i][p]) + " " + int2str(-1*var_y[i][q]) + " " + int2str(var_b[p][q][0][1]));
 				// ~Yip v Yiq v Bpq10
 				clauseHard.push_back(int2str(-1*var_y[i][p]) + " " + int2str(var_y[i][q]) + " " + int2str(var_b[p][q][1][0]));
-				// ~Bpq01 v ~Bpq10 v ~Bpq11
-				clauseHard.push_back(int2str(-1*var_b[p][q][0][1]) + " " + int2str(-1*var_b[p][q][1][0]) + " " + int2str(-1*var_b[p][q][1][1]));
+                if(par_maxColRemove > 0) // column elimination enabled
+                {
+                    // Kp v Kq v ~Bpq01 v ~Bpq10 v ~Bpq11
+                    clauseHard.push_back(int2str(var_k[p]) + " " + int2str(var_k[q]) + " " + int2str(-1*var_b[p][q][0][1]) + " " + int2str(-1*var_b[p][q][1][0]) + " " + int2str(-1*var_b[p][q][1][1]));
+                }
+                else // column elimination disabled
+                {
+                    // ~Bpq01 v ~Bpq10 v ~Bpq11
+                    clauseHard.push_back(int2str(-1*var_b[p][q][0][1]) + " " + int2str(-1*var_b[p][q][1][0]) + " " + int2str(-1*var_b[p][q][1][1]));
+                }
 			}
 		}
 	}
+}
+
+int next_comb(int comb[], int k, int n)
+{
+    int i = k - 1;
+    ++comb[i];
+    while ((i >= 0) && (comb[i] >= n - k + 1 + i))
+    {
+        --i;
+        ++comb[i];
+    }
+
+    if (comb[0] > n - k) /* Combination (n-k, n-k+1, ..., n) reached */
+        return 0; /* No more combinations can be generated */
+
+    /* comb now looks like (..., x, n, n, n, ..., n).
+    Turn it into (..., x, x + 1, x + 2, ...) */
+    for (i = i + 1; i < k; ++i)
+        comb[i] = comb[i - 1] + 1;
+
+    return 1;
+}
+
+void add_column_clauses()
+{
+    int i;
+    // code for C(n, k) 
+    // n choose k
+    int n = numMut;
+    int k = par_maxColRemove + 1;
+    int comb[numMut + 10]; // comb[i] is the index of the i-th element in the combination
+    for (i = 0; i < k; i++)
+        comb[i] = i;
+
+    do
+    {
+        string tmpClause = "";
+        for(i = 0; i < k; i++)
+            tmpClause += int2str(-1*var_k[comb[i]]) + " ";
+        clauseHard.push_back(tmpClause);
+    }while(next_comb(comb, k, n));
 }
 
 void write_maxsat_input(string path)
@@ -347,11 +410,11 @@ void write_maxsat_input(string path)
 	//
 	if(IS_PWCNF)
 	{
-        fout<< "p wcnf " << numVarY + numVarX + numVarB << " " << clauseSoft.size() + clauseHard.size() << " " << hardWeight << "\n";
+        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK << " " << clauseSoft.size() + clauseHard.size() << " " << hardWeight << "\n";
 	}
 	else
 	{
-        fout<< "p wcnf " << numVarY + numVarX + numVarB << " " << clauseSoft.size() + clauseHard.size() << "\n";
+        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK << " " << clauseSoft.size() + clauseHard.size() << "\n";
 	}
 	// soft clauses
 	for(i = 0; i < clauseSoft.size(); i++)
@@ -579,8 +642,12 @@ int main(int argc, char *argv[])
 	set_y_variables();
 	set_x_variables();
 	set_b_variables();
+    if(par_maxColRemove > 0) // column elimination enabled
+        set_k_variables();
 	add_variable_clauses();
 	add_conflict_clauses();
+    if(par_maxColRemove > 0) // column elimination enabled
+        add_column_clauses();
 	write_maxsat_input(fileName + ".maxSAT.in");
     
     // run Max-SAT solver
@@ -588,6 +655,8 @@ int main(int argc, char *argv[])
     cmd = maxSAT_exe + " " + fileName + ".maxSAT.in" + " > " + fileName + ".maxSAT.out";
     system(cmd.c_str());
     maxsatTime = getRealTime() - maxsatTime;
+
+    exit(0);
 
     int numFlip = -1;
     int numFlip01 = -1;
@@ -611,7 +680,7 @@ int main(int argc, char *argv[])
     fLog<< "1_0_FLIPS_REPORTED: " << numFlip10 << "\n";
     fLog<< "2_0_FLIPS_REPORTED: " << numFlip20 << "\n"; // FIXME: 
     fLog<< "2_1_FLIPS_REPORTED: " << numFlip21 << "\n"; // FIXME: 
-    fLog<< "MUTATIONS_REMOVED_UPPER_BOUND: " << 0 << "\n"; // FIXME: 
+    fLog<< "MUTATIONS_REMOVED_UPPER_BOUND: " << par_maxColRemove << "\n"; // FIXME: 
     fLog<< "MUTATIONS_REMOVED_NUM: " << 0 << "\n"; // FIXME: 
     fLog<< "MUTATIONS_REMOVED_INDEX: " << "\n"; // FIXME: 
 
