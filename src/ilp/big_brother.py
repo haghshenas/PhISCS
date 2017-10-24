@@ -29,16 +29,18 @@ parser.add_argument('-o', '--outDir', required = True,
 					help = 'Output directory')
 
 # Optional:
-# parser.add_argument('-g', '--ground', default = None,
-# 					type = str,
-# 					help = 'Ground truth matrix [""]')
 parser.add_argument('-m', '--maxMut', default = 0,
 					type = int,
 					help = 'Max number mutations to be eliminated [0]')
-
 parser.add_argument('-t', '--threads', default = 1,
 					type = int,
 					help = 'Number of threads [Default is 1]')
+parser.add_argument('-b', '--bulk', default = None,
+					type = str,
+					help = 'Bulk sequencing file [""]')
+parser.add_argument('-e', '--delta', default = 0.01,
+					type = float,
+					help = 'Delta in VAF [0.01]')
 
 args = parser.parse_args()
 
@@ -65,6 +67,18 @@ k_max = args.maxMut
 
 fn_weight = args.fnWeight
 fp_weight = args.fpWeight
+
+using_bulk = False
+if args.bulk:
+	delta = args.delta
+	using_bulk = True
+	bulk_mutations = []
+	with open(args.bulk, 'r') as bulkfile:
+		bulkfile.readline()
+		for line in bulkfile:
+			values = line.split('\t')
+			vaf = float(values[3]) / float(values[4])
+			bulk_mutations.append(vaf)
 
 # =========== VARIABLES
 model = Model('Reduced ILP')
@@ -144,6 +158,17 @@ while m < mutations:
 						name='K[{0}]'.format(m))
 	m += 1
 
+if using_bulk:
+	A = {}
+	p = 0
+	while p < mutations:
+		q = 0
+		while q < mutations:
+			A[p, q] = model.addVar(vtype=GRB.BINARY, obj=0,
+					name='A[{0},{1}]'.format(p, q))
+			q += 1
+		p += 1
+
 
 model.modelSense = GRB.MINIMIZE
 model.update()
@@ -192,6 +217,31 @@ while p < mutations:
 			'Conf[{0},{1}]'.format(p, q))
 		q += 1
 	p += 1
+
+# --- Constraint for VAFs
+if using_bulk:
+	p = 0
+	while p < mutations:
+		q = 0
+		while q < mutations:
+			c = 0
+			while c < cells:
+				model.addConstr(A[p, q] * (matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p]) >= A[p, q] *(matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q]) )
+				c += 1
+
+			model.addConstr(A[p, q] + A[q, p] <= 1)
+			model.addConstr(A[p, q] <= 1 - K[p])
+			model.addConstr(A[p, q] <= 1 - K[q])
+
+			model.addConstr(A[p, q] * bulk_mutations[p]  * (1 + delta) >= A[p, q] * bulk_mutations[q])
+
+			r = 0
+			while r < mutations:
+				model.addConstr(bulk_mutations[p] * (1 + delta) >= bulk_mutations[q] * (A[p, q] - A[r, q] - A[q, r]) + bulk_mutations[r] * (A[p, r] - A[r,q] - A[q, r]))
+				r += 1
+
+			q += 1
+		p += 1
 
 time_to_model = datetime.now() - start_model
 # ====== OPTIMIZE
