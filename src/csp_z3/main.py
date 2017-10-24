@@ -315,21 +315,21 @@ if __name__ == "__main__":
 		else:
 			raise
 
+	allow_col_elim = False
 	maxCol = args.maxMut
 	if maxCol == 0:
-		maxCol = 0
 		allow_col_elim = False
+		maxCol = 0
 	else:
 		allow_col_elim = True
 
+	allow_vaf = False
 	vafFile = ''
 	vafDelta = 0
 	if args.bulk is not None:
 		allow_vaf = True
 		vafFile = args.bulk
 		vafDelta = args.delta
-	else:
-		allow_vaf = False
 
 	vafP, vafT = read_vafs(vafFile, vafDelta, allow_vaf)
 	log = open(logFile, 'w')
