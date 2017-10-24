@@ -44,9 +44,11 @@ for n in ${nList[@]}; do
            inFileFull=${dataDir}/noisy/${inFile}
            # ls ${inFileFull}
            OPT="-f ${inFileFull} -n ${fpN} -p ${fpW} -m 0 -t 1 -o ${outPre}/${app}"
-           >&2 printf "${inFile} ${app} "
-           /usr/bin/time -f "time %e memory %M status %x" timeout ${timeLimit} ${cmdEXE[${app}]} ${OPT} 1> /dev/null
+           # >&2 printf "${inFile} ${app} "
+           # /usr/bin/time -f "time %e memory %M status %x" timeout ${timeLimit} ${cmdEXE[${app}]} ${OPT} 1> /dev/null
+           timeout ${timeLimit} ${cmdEXE[${app}]} ${OPT} 1> /dev/null &
           done
+          wait
          done
         done
        done
