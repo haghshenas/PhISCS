@@ -4,6 +4,7 @@ from datetime import datetime
 from itertools import *
 import argparse
 import os, sys, errno
+import inspect
 
 
 def read_data(file):
@@ -158,8 +159,10 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 
 
 def exe_command(file):
+	scriptPath = inspect.getframeinfo(inspect.currentframe()).filename
+	scriptDir = os.path.dirname(os.path.abspath(scriptPath))
 	#command = " -t:20000 -smt2 " + file + " > " + file.replace('temp1', 'temp2')
-	command = '../thirdParty/z3/build/z3 -smt2 ' + file + " > " + file.replace('temp1', 'temp2')
+	command = scriptDir + '/../thirdParty/z3/build/z3 -smt2 ' + file + " > " + file.replace('temp1', 'temp2')
 	os.system(command)
 
 
