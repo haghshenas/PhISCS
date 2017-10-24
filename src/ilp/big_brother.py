@@ -329,7 +329,7 @@ while m < mutations:
 		solution_mutation_names.append(mutation_names[m])
 	else:
 		removed_mutation_names.append(mutation_names[m])
-		roeoved_mutation_indeces.append(str(m+1))
+		removed_mutation_indeces.append(str(m+1))
 	m += 1
 
 file_out.write('cellID/mutID\t')
