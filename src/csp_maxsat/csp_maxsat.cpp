@@ -397,6 +397,11 @@ void add_column_clauses()
     }while(next_comb(comb, k, n));
 }
 
+void add_column_clauses_weight()
+{
+	// the weighted version of column removal!
+}
+
 void write_maxsat_input(string path)
 {
 	int i, j;
