@@ -3,21 +3,21 @@
 dataDir="../data/simulated/21oct"
 outPre="results/results_21oct_noColElim"
 
-# timeLimit=3600
-timeLimit=600
+timeLimit=3600
+# timeLimit=600
 
-# maxSimNo=10
-maxSimNo=2
+maxSimNo=10
+# maxSimNo=1
 nList=(100)
 mList=(40)
-# sList=(4 7)
-sList=(7)
+sList=(4 7)
+# sList=(7)
 vafList=(0.05)
 covList=(2000)
-# kList=(0 1 2)
-kList=(0)
-# fnList=(0.15 0.25)
-fnList=(0.15)
+kList=(0 1 2)
+# kList=(0)
+fnList=(0.15 0.25)
+# fnList=(0.15)
 fpList=(0.0001)
 naList=(0.15)
 appList=(ilp z3 openwbo)
@@ -46,10 +46,6 @@ for n in ${nList[@]}; do
            OPT="-f ${inFileFull} -n ${fpN} -p ${fpW} -m 0 -t 1 -o ${outPre}/${app}"
            >&2 printf "${inFile} ${app} "
            /usr/bin/time -f "time %e memory %M status %x" timeout ${timeLimit} ${cmdEXE[${app}]} ${OPT} 1> /dev/null
-           # >&2 printf "${inFile}      z3 "
-           # /usr/bin/time -f "time %e memory %M status %x" timeout ${timeLimit} ${cmdZ3} ${OPT} -o ${outPre}/z3 1> /dev/null
-           # >&2 printf "${inFile} openwbo "
-           # /usr/bin/time -f "time %e memory %M status %x" timeout ${timeLimit} ${cmdMAX} ${OPT} -o ${outPre}/openwbo 1> /dev/null
           done
          done
         done
