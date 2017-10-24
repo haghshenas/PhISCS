@@ -4,7 +4,7 @@ from datetime import datetime
 from itertools import *
 import argparse
 import os, sys, errno
-import inspect
+from itertools import *
 
 
 def read_data(file):
@@ -22,6 +22,35 @@ def write_output(outresult, file, col_el):
 	df.drop(df.columns[col_el], axis=1, inplace=True)
 	df.to_csv(file, sep='\t')
 	return df.values
+
+
+def read_vafs(file, delta, allow_vaf):
+	if allow_vaf==False:
+		return [], []
+	df = pd.read_table(file)
+	m = df.shape[0]
+	vaf = []
+	for i in range(m):
+		vaf.append(float(df[df.columns[5]][i].split(';')[1].replace('trueVAF=','')))
+	
+	vafP = np.zeros(shape=(m, m)).astype(int)
+	vafT = np.zeros(shape=(m, m, m)).astype(int)
+
+	p = q = range(df.shape[0])
+	loopP = list(product(p, q))
+	for [p, q] in loopP:
+		if p != q:
+			if (vaf[p]*(1+delta)) >= vaf[q]:
+				vafP[p][q] = 1
+	
+	p = q = t = range(m)
+	loopT = list(product(p, q, t))
+	for [r, a, b] in loopT:
+		if p != q and p != t and q != t:
+			if (vaf[p]*(1+delta)) >= (vaf[q]+vaf[t]):
+				vafT[p][q][t] = 1
+	
+	return vafP, vafT
 
 
 def compare_flips(inp, output, n, m, zeroToOne):
@@ -58,6 +87,8 @@ def check_conflict_free(sol_matrix):
 			zeroone = False
 			onezero = False
 			for r in range(sol_matrix.shape[0]):
+				if sol_matrix[r][p] == -1:
+					return "NO"
 				if sol_matrix[r][p] == 1 and sol_matrix[r][q] == 1:
 					oneone = True
 				if sol_matrix[r][p] == 0 and sol_matrix[r][q] == 1:
@@ -84,8 +115,11 @@ def getY(i,j):
 def getB(p,q,a,b):
 	return "B_" + str(p) + "_" + str(q) + "_" + str(a) + "_" + str(b)
 
+def getA(p,q):
+	return "A_" + str(p) + "_" + str(q)
 
-def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_weight, maxCol):
+
+def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_weight, maxCol, allow_vaf, vafP, vafT):
 	file = open(fstr, "w")
 	#file.write("(check-sat-using smt :random-seed 1)\n")
 	#file.write("(apply qflia)")
@@ -111,6 +145,11 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 	else:
 		K = []
 
+	if allow_vaf:
+		for p in range(numMuts):
+			for q in range(numMuts):
+				file.write("(declare-const "+getA(p,q)+" Bool)\n")
+
 	# Objective
 	for i in range(numCells):
 		for j in range(numMuts):
@@ -122,9 +161,6 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 				file.write("(assert (not (= "+getX(i,j)+" "+getY(i,j)+")))\n")
 			elif data[i][j] == 2:# NA Values
 				file.write("(assert (= "+getX(i,j)+" "+getY(i,j)+"))\n")
-				#file.write("(assert-soft (= X_"+str(i)+"_"+str(j)+" true) :weight -"+str((data[:,j]==0).sum())+")\n")
-				#file.write("(assert-soft (= X_"+str(i)+"_"+str(j)+" false) :weight -"+str((data[:,j]==1).sum())+")\n")
-				#file.write("(assert (= "+getX(i,j)+" true))\n")
 				#file.write("(assert-soft (= "+getY(i,j)+" true) :weight -"+str((data[:,j]==0).sum())+")\n")
 				#file.write("(assert-soft (= "+getY(i,j)+" false) :weight -"+str((data[:,j]==1).sum())+")\n")
 			else:
@@ -140,12 +176,39 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 			temp = temp + ")))\n"
 			file.write(temp)
 
+	# Constraint for VAFs
+	if allow_vaf:
+		for p in range(numMuts):
+			for q in range(numMuts):
+				if p==q:
+					file.write("(assert (= "+getA(p,q)+" false))\n")
+				else:
+					file.write("(assert (or (not "+getA(p,q)+") (not "+getA(q,p)+")))\n") #1.a
+					file.write("(assert (or (not (or "+getA(p,q)+" "+getA(q,p)+")) (and (not "
+											+getK(p)+") (not "+getK(q)+"))))\n") #1.b
+					if vafP[p][q] == 0:
+						file.write("(assert (= "+getA(p,q)+" false))\n") #1.d
+				for r in range(numMuts):
+					if p != q and p != r and q != r:
+						if vafT[p][q][r] == 0 and q < r:
+							file.write("(assert (= (and "+getA(p,q)+" "
+							+getA(p,r)+" (not "+getA(q,r)+") (not "+getA(r,q)+")) false))\n") #2
+							
+
+		for t in range(numCells):
+			for p in range(numMuts):
+				for q in range(numMuts):
+					file.write("(assert (or (not (and "+getA(p,q)+" "+getY(t,q)+")) (and "
+													+getA(p,q)+" "+getY(t,p)+")))\n") #1.c
+
+
+
 	# Constraint for checking conflict
 	for i in range(numCells):
 		for p in range(numMuts):
 			for q in range(numMuts):
 				if p <= q:
-					file.write("(assert (or (not "+getY(i,p)+") (not "+getY(i,q)+") "+getB(p,q,1,1)+"))\n")	
+					file.write("(assert (or (not "+getY(i,p)+") (not "+getY(i,q)+") "+getB(p,q,1,1)+"))\n")
 					file.write("(assert (or "+getY(i,p)+" (not "+getY(i,q)+") "+getB(p,q,0,1)+"))\n")
 					file.write("(assert (or (not "+getY(i,p)+")  "+getY(i,q)+" "+getB(p,q,1,0)+"))\n")
 					if allow_col_elim:
@@ -158,11 +221,12 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 	file.write("(get-model)\n")
 
 
-def exe_command(file):
-	scriptPath = inspect.getframeinfo(inspect.currentframe()).filename
-	scriptDir = os.path.dirname(os.path.abspath(scriptPath))
-	#command = " -t:20000 -smt2 " + file + " > " + file.replace('temp1', 'temp2')
-	command = scriptDir + '/../thirdParty/z3/build/z3 -smt2 ' + file + " > " + file.replace('temp1', 'temp2')
+def exe_command(file, time_out):
+	command = str(os.path.dirname(os.path.realpath(__file__)))
+	command = command + '/../thirdParty/z3/build/z3 '
+	if time_out > 0:
+		command = command + '-t:' + str(time_out) + '000 '
+	command = command + '-smt2 ' + file + " > " + file.replace('temp1', 'temp2')
 	os.system(command)
 
 
@@ -218,12 +282,18 @@ if __name__ == "__main__":
 	parser.add_argument('-o', '--outDir', required = True,
 						type = str,
 						help = 'Output directory')
-	parser.add_argument('-m', '--maxMut', #default = 0,
+	parser.add_argument('-m', '--maxMut', default = 0,
 						type = int,
 						help = 'Max number mutations to be eliminated [0]')
-	parser.add_argument('-t', '--threads',
-					type = int,
-					help = 'Number of threads [1]')
+	parser.add_argument('-t', '--threads', default = 1,
+						type = int,
+						help = 'Number of threads [1]')
+	parser.add_argument('-b', '--bulk',
+						type = str,
+						help = 'Bulk sequencing file')
+	parser.add_argument('-e', '--delta', default = 0.1,
+						type = float,
+						help = 'Delta in VAF [0.1]')
 	args = parser.parse_args()
 
 	inFile = args.file
@@ -235,6 +305,7 @@ if __name__ == "__main__":
 	col = noisy_data.shape[1]
 	tale = inFile.split('.')[-1]
 	logFile = outDir+'/'+inFile.split('/')[-1].replace(tale, 'log')
+	timeOut = 31
 
 	try:
 		os.makedirs(outDir)
@@ -243,29 +314,40 @@ if __name__ == "__main__":
 			pass
 		else:
 			raise
-	
-	if args.maxMut is not None:
-		maxCol = args.maxMut
-		if maxCol == 0:
-			maxCol = 0
-			allow_col_elim = False
-		else:
-			allow_col_elim = True
-	else:
+
+	maxCol = args.maxMut
+	if maxCol == 0:
 		maxCol = 0
 		allow_col_elim = False
-	
+	else:
+		allow_col_elim = True
+
+	vafFile = ''
+	vafDelta = 0
+	if args.bulk is not None:
+		allow_vaf = True
+		vafFile = args.bulk
+		vafDelta = args.delta
+	else:
+		allow_vaf = False
+
+	vafP, vafT = read_vafs(vafFile, vafDelta, allow_vaf)
 	log = open(logFile, 'w')
-	produce_input(logFile.replace('log','temp1'), noisy_data, row, col, allow_col_elim, fn_weight, fp_weight, maxCol)
+	produce_input(logFile.replace('log','temp1'), noisy_data, row, col, allow_col_elim, 
+									fn_weight, fp_weight, maxCol, allow_vaf, vafP, vafT)
+	#'''
 	t1 = datetime.now()
-	exe_command(logFile.replace('log','temp1'))
+	exe_command(logFile.replace('log','temp1'), timeOut)
 	total_model = datetime.now()-t1
+
 	output_data, col_el = read_ouput(row, col, logFile.replace('log','temp2'), allow_col_elim)
 	output_mat = write_output(output_data, logFile.replace('log','output'), col_el)
+	#command = "rm "+outDir+"/*.temp1"
 	command = "rm " + os.path.splitext(logFile)[0]+'.temp1'
-	os.system(command)
+	#os.system(command)
+	#command = "rm "+outDir+"/*.temp2"
 	command = "rm " + os.path.splitext(logFile)[0]+'.temp2'
-	os.system(command)
+	#os.system(command)
 	total_running = datetime.now()-t0
 	
 	log.write('FILE_NAME: '+inFile.split('/')[-1]+'\n')
@@ -276,7 +358,7 @@ if __name__ == "__main__":
 	log.write('NUM_THREADS: '+str(1)+'\n')
 	log.write('MODEL_SOLVING_TIME_SECONDS: '+str("{0:.3f}".format(total_model.total_seconds()))+'\n')
 	log.write('RUNNING_TIME_SECONDS: '+str("{0:.3f}".format(total_running.total_seconds()))+'\n')
-	log.write('IS_CONFLICT_FREE: '+str(check_conflict_free(output_data))+'\n')
+	log.write('IS_CONFLICT_FREE: '+str(check_conflict_free(output_mat))+'\n')
 	a = compare_flips(noisy_data, output_data, row, col, True)
 	b = compare_flips(noisy_data, output_data, row, col, False)
 	c = compare_na(noisy_data, output_data, row, col, True)
@@ -290,4 +372,4 @@ if __name__ == "__main__":
 	log.write('MUTATIONS_REMOVED_NUM: '+str(len(col_el))+'\n')
 	temp = 'MUTATIONS_REMOVED_INDEX: '+ "," . join([str(i) for i in sorted(col_el)])
 	log.write(temp+'\n')
-	
+	#'''
