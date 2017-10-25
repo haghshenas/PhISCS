@@ -170,7 +170,7 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 	# Constraint for not allowing removed columns go further than maxCol
 	if allow_col_elim:
 		for p in range(numMuts):
-			file.write("(assert-soft (not "+getK(p)+") :weight "+str(int(numMuts/2))+")\n")
+			file.write("(assert-soft (not "+getK(p)+") :weight "+str(maxCol)+")\n")
 
 	# Constraint for VAFs
 	if allow_vaf:
