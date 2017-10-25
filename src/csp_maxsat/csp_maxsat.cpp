@@ -399,7 +399,12 @@ void add_column_clauses()
 
 void add_column_clauses_weight()
 {
-	// the weighted version of column removal!
+    int i;
+    int colWeight = numCell / 2;
+    for(i = 0; i < numMut; i++)
+    {
+        clauseSoft.push_back(colWeight + " " + int2str(-1*var_k[i]));
+    }
 }
 
 void write_maxsat_input(string path)
@@ -643,6 +648,9 @@ int main(int argc, char *argv[])
     fLog<< "FN_WEIGHT: " << par_fnWeight << "\n";
     fLog<< "FP_WEIGHT: " << par_fpWeight << "\n";
     fLog<< "NUM_THREADS: " << par_threads << "\n";
+    // set weights according to the new formulation
+    par_fnWeight = 1;
+    par_fpWeight = numCell / 3;
 	// formulate as Max-SAT
 	set_y_variables();
 	set_x_variables();
@@ -652,7 +660,8 @@ int main(int argc, char *argv[])
 	add_variable_clauses();
 	add_conflict_clauses();
     if(par_maxColRemove > 0) // column elimination enabled
-        add_column_clauses();
+        add_column_clauses_weight();
+        // add_column_clauses();
 	write_maxsat_input(fileName + ".maxSAT.in");
     
     // run Max-SAT solver
@@ -660,8 +669,6 @@ int main(int argc, char *argv[])
     cmd = maxSAT_exe + " " + fileName + ".maxSAT.in" + " > " + fileName + ".maxSAT.out";
     system(cmd.c_str());
     maxsatTime = getRealTime() - maxsatTime;
-
-    exit(0);
 
     int numFlip = -1;
     int numFlip01 = -1;
