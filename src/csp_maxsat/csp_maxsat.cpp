@@ -27,6 +27,7 @@ int     par_maxColRemove = 0;
 int     par_threads = 1;
 bool    IS_PWCNF = true;
 string  MAX_SOLVER = "openwbo";
+string  MAX_EXE = "";
 
 int mat[MAX_CELL][MAX_MUT]; // the 0/1 matrix
 vector<string> cellId;
@@ -80,6 +81,7 @@ void print_help()
         << "   -n, --fnWeight INT        Weight for false negative" << endl
         << "   -p, --fpWeight INT        Weight for false negative" << endl
         << "   -o, --outDir   STR        Output directory" << endl
+        << "   -s, --solver   STR        Path to the Max-SAT solver" << endl
         << endl
         << "Optional arguments:" << endl
         << "   -m, --maxMut   INT        Max number mutations to be eliminated [0]" << endl
@@ -102,11 +104,12 @@ bool command_line_parser(int argc, char *argv[])
         {"outDir",                 required_argument,  0,                  'o'},
         {"maxMut",                 required_argument,  0,                  'm'},
         {"threads",                required_argument,  0,                  't'},
+        {"solver",                 required_argument,  0,                  's'},
         {"help",                   no_argument,        0,                  'h'},
         {0,0,0,0}
     };
 
-    while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:t:h", longOptions, &index))!= -1 )
+    while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:t:s:h", longOptions, &index))!= -1 )
     {
         switch (c)
         {
@@ -148,6 +151,9 @@ bool command_line_parser(int argc, char *argv[])
                     return false;
                 }
                 break;
+            case 's':
+                MAX_EXE = optarg;
+                break;
             case 'h':
                 print_usage();
                 print_help();
@@ -181,6 +187,13 @@ bool command_line_parser(int argc, char *argv[])
         cerr<< "[ERROR] option -p/--fpWeight is required" << endl;
         print_usage();
         return false;
+    }
+
+    if(MAX_EXE == "")
+    {
+        cerr<< "[ERROR] option -s/--solver is required" << endl;
+        print_usage();
+        return false;	
     }
 
     return true;
@@ -604,14 +617,6 @@ int main(int argc, char *argv[])
 	string cmd;
     
     string exeDir = get_dir_path(get_exe_path());
-    // qmaxsat or openwbo
-    string maxSAT_exe;
-    if(MAX_SOLVER == "qmaxsat")
-    	maxSAT_exe = exeDir + "/solver/qmaxsat/qmaxsat14.04auto-glucose3_static";
-    else if(MAX_SOLVER == "openwbo")
-    	maxSAT_exe = exeDir + "/solver/open-wbo/open-wbo_glucose4.1_static";
-    else
-    	maxSAT_exe = "noSolver";
 
     // create working directory if does not exist
     // FIXME: use a more portable mkdir... int mkdir(const char *path, mode_t mode);
@@ -652,11 +657,9 @@ int main(int argc, char *argv[])
     
     // run Max-SAT solver
     double maxsatTime = getRealTime();
-    cmd = maxSAT_exe + " " + fileName + ".maxSAT.in" + " > " + fileName + ".maxSAT.out";
+    cmd = MAX_EXE + " " + fileName + ".maxSAT.in" + " > " + fileName + ".maxSAT.out";
     system(cmd.c_str());
     maxsatTime = getRealTime() - maxsatTime;
-
-    exit(0);
 
     int numFlip = -1;
     int numFlip01 = -1;
