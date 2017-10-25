@@ -169,12 +169,8 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 
 	# Constraint for not allowing removed columns go further than maxCol
 	if allow_col_elim:
-		for combo in combinations(range(numMuts), maxCol+1):
-			temp = "(assert (not (and"
-			for i in combo:
-				temp = temp + " " + getK(i)
-			temp = temp + ")))\n"
-			file.write(temp)
+		for p in range(numMuts):
+			file.write("(assert-soft (not "+getK(p)+") :weight "+str(int(numMuts/2))+")\n")
 
 	# Constraint for VAFs
 	if allow_vaf:
@@ -193,7 +189,6 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 						if vafT[p][q][r] == 0 and q < r:
 							file.write("(assert (= (and "+getA(p,q)+" "
 							+getA(p,r)+" (not "+getA(q,r)+") (not "+getA(r,q)+")) false))\n") #2
-							
 
 		for t in range(numCells):
 			for p in range(numMuts):
