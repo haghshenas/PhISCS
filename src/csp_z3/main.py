@@ -185,7 +185,8 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 					file.write("(assert (= "+getA(p,q)+" false))\n")
 				else:
 					file.write("(assert (or (not "+getA(p,q)+") (not "+getA(q,p)+")))\n") #1.a
-					file.write("(assert (or (not (or "+getA(p,q)+" "+getA(q,p)+")) (and (not "
+					if allow_col_elim:
+						file.write("(assert (or (not (or "+getA(p,q)+" "+getA(q,p)+")) (and (not "
 											+getK(p)+") (not "+getK(q)+"))))\n") #1.b
 					if vafP[p][q] == 0:
 						file.write("(assert (= "+getA(p,q)+" false))\n") #1.d
