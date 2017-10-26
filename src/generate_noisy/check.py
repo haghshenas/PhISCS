@@ -22,6 +22,7 @@ if __name__ == "__main__":
 	countFN = 0
 	countNA = 0
 	noumberOfOne = 0
+	numberOfOther = 0
 	fn = float(fn)
 
 	for i in range(ground.shape[0]):
@@ -34,6 +35,7 @@ if __name__ == "__main__":
 					1+1
 				elif noisy[i][j] == 2:
 					countNA = countNA+1
+					numberOfOther = numberOfOther+1
 				else:
 					print 'Wrong Input'
 					sys.exit(2)
@@ -48,4 +50,4 @@ if __name__ == "__main__":
 					print 'Wrong Input'
 					sys.exit(2)
 
-	print countNA,'\t', countFN,'\t',countFP,'\t',float(noumberOfOne*fn)
+	print countNA,'\t', countFN,'\t',countFP,'\t',float(noumberOfOne*fn),'\t',float((noumberOfOne-numberOfOther)*fn),'\t',float(noumberOfOne*fn*0.85)
