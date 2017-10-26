@@ -404,7 +404,7 @@ void add_column_clauses_weight()
     int i;
     // int colWeight = numCell / 2;
     // int colWeight = 20;
-    string str_colWeight = int2str(colWeight);
+    string str_colWeight = int2str(par_colWeight);
     for(i = 0; i < numMut; i++)
     {
         clauseSoft.push_back(str_colWeight + " " + int2str(-1*var_k[i]));
