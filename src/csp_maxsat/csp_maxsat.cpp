@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <set>
 #include <getopt.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -400,7 +401,8 @@ void add_column_clauses()
 void add_column_clauses_weight()
 {
     int i;
-    int colWeight = numCell / 2;
+    // int colWeight = numCell / 2;
+    int colWeight = 20;
     string str_colWeight = int2str(colWeight);
     for(i = 0; i < numMut; i++)
     {
@@ -441,7 +443,53 @@ void write_maxsat_input(string path)
 	fout.close();
 }
 
-bool read_maxsat_output(string path, int &flip, int &flip01, int &flip10, int &flip20, int &flip21)
+bool read_maxsat_output_columnElim(string path, int &numRemovedCol, set<int> &removedCol)
+{
+    numRemovedCol = 0;
+    string line;
+    bool oLine = false, sLine = false, vLine = false;
+    ifstream fin(path.c_str());
+    if(fin.is_open() == false)
+    {
+        cerr<< "Could not open file: " << path << endl;
+        exit(EXIT_FAILURE);
+    }
+    // parse
+    while(getline(fin, line))
+    {
+        if(line[0] == 'o')
+        {
+            oLine = true;
+        }
+        if(line[0] == 's')
+        {
+            sLine = true;
+        }
+        if(line[0] == 'v')
+        {
+            vLine = true;
+            // update the input matrix
+            int tmpVar, tmpVarAbs;
+            istringstream sin(line.substr(1));
+            while(sin >> tmpVar)
+            {
+                tmpVarAbs = abs(tmpVar);
+                if(tmpVarAbs > numVarY + numVarX + numVarB) // it is a k variable
+                {
+                    if(tmpVar > 0) // column to be removed
+                    {
+                        numRemovedCol++;
+                        removedCol.insert(tmpVar - (numVarY + numVarX + numVarB) - 1); // 0-based index
+                    }
+                }
+            }
+        }
+    }
+    fin.close();
+    return (oLine && sLine && vLine);
+}
+
+bool read_maxsat_output_bitFlips(string path, int &flip, int &flip01, int &flip10, int &flip20, int &flip21, set<int> &removedCol)
 {
     flip = 0;
     flip01 = 0;
@@ -476,7 +524,8 @@ bool read_maxsat_output(string path, int &flip, int &flip01, int &flip10, int &f
             while(sin >> tmpVar)
             {
             	tmpVarAbs = abs(tmpVar);
-                if(tmpVarAbs <= numVarY)
+                // if(tmpVarAbs <= numVarY && removedCol.find(tmpVarAbs) == removedCol.end())
+                if(tmpVarAbs <= numVarY && removedCol.find(map_y2ij[tmpVarAbs].second) == removedCol.end())
                 {
                 	oldVal = mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second];
 
@@ -521,14 +570,15 @@ bool read_maxsat_output(string path, int &flip, int &flip01, int &flip10, int &f
     return (oLine && sLine && vLine);
 }
 
-void write_output_matrix(string path)
+void write_output_matrix(string path, set<int> &removedCol)
 {
     int i, j;
     ofstream fout(path.c_str());
     // header
     for(i = 0; i < mutId.size(); i++)
     {
-        fout<< mutId[i] << (i < mutId.size() - 1 ? "\t" : "");
+        if(removedCol.find(i-1) == removedCol.end()) // column not removed
+            fout<< mutId[i] << "\t";
     }
     fout<< "\n";
     //content
@@ -537,7 +587,8 @@ void write_output_matrix(string path)
         fout<< cellId[i] << "\t";
         for(j = 0; j < numMut; j++)
         {
-            fout<< mat[i][j] << (j < numMut - 1 ? "\t" : "");
+            if(removedCol.find(j) == removedCol.end()) // column not removed
+                fout<< mat[i][j] << "\t";
         }
         fout<< "\n";
     }
@@ -657,12 +708,18 @@ int main(int argc, char *argv[])
 	set_x_variables();
 	set_b_variables();
     if(par_maxColRemove > 0) // column elimination enabled
+    {
         set_k_variables();
-	add_variable_clauses();
-	add_conflict_clauses();
-    if(par_maxColRemove > 0) // column elimination enabled
-        add_column_clauses_weight();
+        add_variable_clauses();
+        add_conflict_clauses();
         // add_column_clauses();
+        add_column_clauses_weight();
+    }
+    else
+    {
+        add_variable_clauses();
+        add_conflict_clauses();
+    }
 	write_maxsat_input(fileName + ".maxSAT.in");
     
     // run Max-SAT solver
@@ -671,31 +728,49 @@ int main(int argc, char *argv[])
     system(cmd.c_str());
     maxsatTime = getRealTime() - maxsatTime;
 
-    int numFlip = -1;
-    int numFlip01 = -1;
-    int numFlip10 = -1;
-    int numFlip20 = -1;
-    int numFlip21 = -1;
+    int numFlip = 0;
+    int numFlip01 = 0;
+    int numFlip10 = 0;
+    int numFlip20 = 0;
+    int numFlip21 = 0;
+    int numRemovedCol = 0;
+    set<int> removedCol;
 
-    if(read_maxsat_output(fileName + ".maxSAT.out", numFlip, numFlip01, numFlip10, numFlip20, numFlip21) == false)
+    if(par_maxColRemove > 0)
+    {
+        if(read_maxsat_output_columnElim(fileName + ".maxSAT.out", numRemovedCol, removedCol) == false)
+        {
+            cerr<< "[ERROR] Max-SAT solver faild!"<< endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+    //
+    if(read_maxsat_output_bitFlips(fileName + ".maxSAT.out", numFlip, numFlip01, numFlip10, numFlip20, numFlip21, removedCol) == false)
     {
         cerr<< "[ERROR] Max-SAT solver faild!"<< endl;
         exit(EXIT_FAILURE);
     }
 
     // solution is found, save it!
-    write_output_matrix(fileName + ".output");
+    write_output_matrix(fileName + ".output", removedCol);
     fLog<< "MODEL_SOLVING_TIME_SECONDS: " << maxsatTime << "\n";
     fLog<< "RUNNING_TIME_SECONDS: " << getRealTime() - realTime << "\n";
     fLog<< "IS_CONFLICT_FREE: " << "YES" << "\n"; // FIXME: write the function
     fLog<< "TOTAL_FLIPS_REPORTED: " << numFlip01 + numFlip10 << "\n";
     fLog<< "0_1_FLIPS_REPORTED: " << numFlip01 << "\n";
     fLog<< "1_0_FLIPS_REPORTED: " << numFlip10 << "\n";
-    fLog<< "2_0_FLIPS_REPORTED: " << numFlip20 << "\n"; // FIXME: 
-    fLog<< "2_1_FLIPS_REPORTED: " << numFlip21 << "\n"; // FIXME: 
-    fLog<< "MUTATIONS_REMOVED_UPPER_BOUND: " << par_maxColRemove << "\n"; // FIXME: 
-    fLog<< "MUTATIONS_REMOVED_NUM: " << 0 << "\n"; // FIXME: 
-    fLog<< "MUTATIONS_REMOVED_INDEX: " << "\n"; // FIXME: 
+    fLog<< "2_0_FLIPS_REPORTED: " << numFlip20 << "\n";
+    fLog<< "2_1_FLIPS_REPORTED: " << numFlip21 << "\n";
+    fLog<< "MUTATIONS_REMOVED_UPPER_BOUND: " << par_maxColRemove << "\n";
+    fLog<< "MUTATIONS_REMOVED_NUM: " << numRemovedCol << "\n";
+    fLog<< "MUTATIONS_REMOVED_INDEX: ";
+    int ii;
+    set<int>::iterator it;
+    for(ii = 1, it = removedCol.begin(); it != removedCol.end(); it++, ii++)
+    {
+        fLog<< (*it)+1 << (ii < removedCol.size() ? "," : "");
+    }
+    fLog << "\n";
 
     fLog.close();
 
