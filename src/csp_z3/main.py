@@ -222,7 +222,7 @@ def exe_command(file, time_out):
 	command = command + '/../thirdParty/z3/build/z3 '
 	if time_out > 0:
 		command = command + '-t:' + str(time_out) + '000 '
-	command = command + '-smt2 ' + file + " > " + file.replace('temp1', 'temp2')
+	command = command + '-smt2 ' + file + " > " + os.path.splitext(file)[0] + 'temp2'
 	os.system(command)
 
 
@@ -299,8 +299,7 @@ if __name__ == "__main__":
 	noisy_data = read_data(inFile)
 	row = noisy_data.shape[0]
 	col = noisy_data.shape[1]
-	tale = inFile.split('.')[-1]
-	logFile = outDir+'/'+inFile.split('/')[-1].replace(tale, 'log')
+	logFile = outDir + '/' + os.path.splitext(inFile.split('/')[-1])[0] + 'log'
 	timeOut = 0
 
 	try:
@@ -329,15 +328,15 @@ if __name__ == "__main__":
 
 	vafP, vafT = read_vafs(vafFile, vafDelta, allow_vaf)
 	log = open(logFile, 'w')
-	produce_input(logFile.replace('log','temp1'), noisy_data, row, col, allow_col_elim, 
+	produce_input(os.path.splitext(logFile)[0] + 'temp1', noisy_data, row, col, allow_col_elim, 
 									fn_weight, fp_weight, maxCol, allow_vaf, vafP, vafT)
 	#'''
 	t1 = datetime.now()
-	exe_command(logFile.replace('log','temp1'), timeOut)
+	exe_command(os.path.splitext(logFile)[0] + 'temp1', timeOut)
 	total_model = datetime.now()-t1
 
-	output_data, col_el = read_ouput(row, col, logFile.replace('log','temp2'), allow_col_elim)
-	output_mat = write_output(output_data, logFile.replace('log','output'), col_el)
+	output_data, col_el = read_ouput(row, col, os.path.splitext(logFile)[0] + 'temp2', allow_col_elim)
+	output_mat = write_output(output_data, os.path.splitext(logFile)[0] + 'output', col_el)
 	#command = "rm "+outDir+"/*.temp1"
 	command = "rm " + os.path.splitext(logFile)[0]+'.temp1'
 	#os.system(command)
