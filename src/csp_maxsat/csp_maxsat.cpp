@@ -24,6 +24,7 @@ string  par_inputFile = "";
 string  par_outDir = "";
 int     par_fnWeight = -1;
 int     par_fpWeight = -1;
+int     par_colWeight = -1;
 int     par_maxColRemove = 0;
 int     par_threads = 1;
 bool    IS_PWCNF = true;
@@ -402,7 +403,7 @@ void add_column_clauses_weight()
 {
     int i;
     // int colWeight = numCell / 2;
-    int colWeight = 20;
+    // int colWeight = 20;
     string str_colWeight = int2str(colWeight);
     for(i = 0; i < numMut; i++)
     {
@@ -701,8 +702,7 @@ int main(int argc, char *argv[])
     fLog<< "FP_WEIGHT: " << par_fpWeight << "\n";
     fLog<< "NUM_THREADS: " << par_threads << "\n";
     // set weights according to the new formulation
-    par_fnWeight = 1;
-    par_fpWeight = numCell / 3;
+    par_colWeight = par_maxColRemove;
 	// formulate as Max-SAT
 	set_y_variables();
 	set_x_variables();
