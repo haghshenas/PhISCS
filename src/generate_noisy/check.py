@@ -13,6 +13,7 @@ if __name__ == "__main__":
 	
 	groundF = sys.argv[1]
 	noisyF = sys.argv[2]
+	fn = sys.argv[3]
 	
 	ground = read_data(groundF)
 	noisy = read_data(noisyF)
@@ -20,10 +21,13 @@ if __name__ == "__main__":
 	countFP = 0
 	countFN = 0
 	countNA = 0
+	noumberOfOne = 0
+	fn = float(fn)
 
 	for i in range(ground.shape[0]):
 		for j in range(ground.shape[1]):
 			if ground[i][j] == 1:
+				noumberOfOne = noumberOfOne+1
 				if noisy[i][j] == 0:
 					countFN = countFN+1
 				elif noisy[i][j] == 1:
@@ -44,4 +48,4 @@ if __name__ == "__main__":
 					print 'Wrong Input'
 					sys.exit(2)
 
-	print countNA,'\t', countFN,'\t',countFP
+	print countNA,'\t', countFN,'\t',countFP,'\t',float(noumberOfOne*fn)

@@ -49,7 +49,7 @@ do
 						g=${directory}/ground/simNo_${id}-n_${n}-m_${m}-s_${s}-minVAF_${minVAF}-cov_${cov}-k_${k}.SCnoNoise
 						f=${directory}/noisy/simNo_${id}-n_${n}-m_${m}-s_${s}-minVAF_${minVAF}-cov_${cov}-k_${k}-fn_${fn}-fp_${fp}-na_${na}.SCnoisy
 						echo $f
-						python2 check.py $g $f
+						python2 check.py $g $f $fn
 					done
 				done
 			done
