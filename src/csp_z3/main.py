@@ -18,6 +18,7 @@ def write_output(outresult, file, col_el):
 	df = df.add_prefix('mut')
 	df.index = ['cell'+str(row) for row in df.index]
 	df.index.name = 'cellID/mutID'
+	col_el2 = []
 	col_el2[:] = [x - 1 for x in col_el]
 	df.drop(df.columns[col_el2], axis=1, inplace=True)
 	df.to_csv(file, sep='\t')
