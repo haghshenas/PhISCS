@@ -682,25 +682,10 @@ int main(int argc, char *argv[])
     system(cmd.c_str());
     string fileName = par_outDir + "/" + get_file_name(par_inputFile, true);
 
-    ofstream fLog((fileName + ".log").c_str());
-    if(fLog.is_open() == false)
-    {
-        cerr<< "Could not open file: " << fileName + ".log" << endl;
-        exit(EXIT_FAILURE);
-    }
-    fLog.precision(3);
-    fLog<< fixed;
-
     // double cpuTime = getCpuTime();
     double realTime = getRealTime();
 
     get_input_data(par_inputFile);
-    fLog<< "FILE_NAME: " << get_file_name(par_inputFile) << "\n";
-    fLog<< "NUM_CELLS(ROWS): " << numCell << "\n";
-    fLog<< "NUM_MUTATIONS(COLUMNS): " << numMut << "\n";
-    fLog<< "FN_WEIGHT: " << par_fnWeight << "\n";
-    fLog<< "FP_WEIGHT: " << par_fpWeight << "\n";
-    fLog<< "NUM_THREADS: " << par_threads << "\n";
     // set weights according to the new formulation
     par_colWeight = par_maxColRemove;
     // formulate as Max-SAT
@@ -753,6 +738,21 @@ int main(int argc, char *argv[])
 
     // solution is found, save it!
     write_output_matrix(fileName + ".output", removedCol);
+    // report the log file
+    ofstream fLog((fileName + ".log").c_str());
+    if(fLog.is_open() == false)
+    {
+        cerr<< "Could not open file: " << fileName + ".log" << endl;
+        exit(EXIT_FAILURE);
+    }
+    fLog.precision(3);
+    fLog<< fixed;
+    fLog<< "FILE_NAME: " << get_file_name(par_inputFile) << "\n";
+    fLog<< "NUM_CELLS(ROWS): " << numCell << "\n";
+    fLog<< "NUM_MUTATIONS(COLUMNS): " << numMut << "\n";
+    fLog<< "FN_WEIGHT: " << par_fnWeight << "\n";
+    fLog<< "FP_WEIGHT: " << par_fpWeight << "\n";
+    fLog<< "NUM_THREADS: " << par_threads << "\n";
     fLog<< "MODEL_SOLVING_TIME_SECONDS: " << maxsatTime << "\n";
     fLog<< "RUNNING_TIME_SECONDS: " << getRealTime() - realTime << "\n";
     fLog<< "IS_CONFLICT_FREE: " << "YES" << "\n"; // FIXME: write the function
