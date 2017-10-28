@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <set>
 #include <getopt.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -23,6 +24,7 @@ string  par_inputFile = "";
 string  par_outDir = "";
 int     par_fnWeight = -1;
 int     par_fpWeight = -1;
+int     par_colWeight = -1;
 int     par_maxColRemove = 0;
 int     par_threads = 1;
 bool    IS_PWCNF = true;
@@ -188,16 +190,16 @@ bool command_line_parser(int argc, char *argv[])
 
 void get_input_data(string path)
 {
-	int i, j;
-	string tmpStr;
-	string line;
+    int i, j;
+    string tmpStr;
+    string line;
     ifstream fin(path.c_str());
     if(fin.is_open() == false)
     {
         cerr<< "Could not open file: " << path << endl;
         exit(EXIT_FAILURE);
     }
-	// process the header
+    // process the header
     getline(fin, line);
     istringstream sin1(line);
     while(sin1 >> tmpStr)
@@ -206,51 +208,51 @@ void get_input_data(string path)
     }
     numMut = mutId.size() - 1;
     //
-	i = 0;
-	while(getline(fin, line))
-	{
-		istringstream sin(line);
+    i = 0;
+    while(getline(fin, line))
+    {
+        istringstream sin(line);
         sin >> tmpStr; // cell name
         cellId.push_back(tmpStr);
-		for(int j = 0; j < numMut; j++)
-		{
-			sin >> mat[i][j];
-		}
-		i++;
-	}
+        for(int j = 0; j < numMut; j++)
+        {
+            sin >> mat[i][j];
+        }
+        i++;
+    }
     numCell = i;
     fin.close();
 }
 
 void set_y_variables()
 {
-	int i, j;
-	numVarY = 0;
+    int i, j;
+    numVarY = 0;
 
-	for(i = 0; i < numCell; i++)
-	{
-		for(j = 0; j < numMut; j++)
-		{
-			numVarY++;
-			var_y[i][j] = numVarY;
-			map_y2ij[numVarY] = make_pair<int, int>(i, j);
-		}
-	}
+    for(i = 0; i < numCell; i++)
+    {
+        for(j = 0; j < numMut; j++)
+        {
+            numVarY++;
+            var_y[i][j] = numVarY;
+            map_y2ij[numVarY] = make_pair<int, int>(i, j);
+        }
+    }
 }
 
 void set_x_variables()
 {
-	int i, j;
-	numVarX = 0;
+    int i, j;
+    numVarX = 0;
 
-	for(i = 0; i < numCell; i++)
-	{
-		for(j = 0; j < numMut; j++)
-		{
-			numVarX++;
-			var_x[i][j] = numVarY + numVarX;
-		}
-	}
+    for(i = 0; i < numCell; i++)
+    {
+        for(j = 0; j < numMut; j++)
+        {
+            numVarX++;
+            var_x[i][j] = numVarY + numVarX;
+        }
+    }
 }
 
 void set_b_variables()
@@ -288,59 +290,59 @@ void set_k_variables()
 
 void add_variable_clauses()
 {
-	int i, j;
-	numZero = 0;
-	numOne = 0;
-	numTwo = 0;
+    int i, j;
+    numZero = 0;
+    numOne = 0;
+    numTwo = 0;
 
-	string str_fnWeight = int2str(par_fnWeight);
-	string str_fpWeight = int2str(par_fpWeight);
+    string str_fnWeight = int2str(par_fnWeight);
+    string str_fpWeight = int2str(par_fpWeight);
 
-	for(i = 0; i < numCell; i++)
-	{
-		for(j = 0; j < numMut; j++)
-		{
-			// fout<< weight_x[map_x2ij[i].first][map_x2ij[i].second] << " " << -1*i << " 0\n";
-			if(mat[i][j] == 0)
-			{
-				numZero++;
-				clauseSoft.push_back(str_fnWeight + " " + int2str(-1*var_x[i][j]));
-				clauseHard.push_back(int2str(-1*var_x[i][j]) + " " + int2str(var_y[i][j]));
-				clauseHard.push_back(int2str(var_x[i][j]) + " " + int2str(-1*var_y[i][j]));
-			}
-			else if (mat[i][j] == 1)
-			{
-				numOne++;
-				clauseSoft.push_back(str_fpWeight + " " + int2str(-1*var_x[i][j]));
-				clauseHard.push_back(int2str(var_x[i][j]) + " " + int2str(var_y[i][j]));
-				clauseHard.push_back(int2str(-1*var_x[i][j]) + " " + int2str(-1*var_y[i][j]));
-			}
-			else // mat[i][j] == 2 (not available)
-			{
-				numTwo++;
-				clauseHard.push_back(int2str(-1*var_x[i][j]) + " " + int2str(var_y[i][j]));
-				clauseHard.push_back(int2str(var_x[i][j]) + " " + int2str(-1*var_y[i][j]));
-			}
-		}
-	}
+    for(i = 0; i < numCell; i++)
+    {
+        for(j = 0; j < numMut; j++)
+        {
+            // fout<< weight_x[map_x2ij[i].first][map_x2ij[i].second] << " " << -1*i << " 0\n";
+            if(mat[i][j] == 0)
+            {
+                numZero++;
+                clauseSoft.push_back(str_fnWeight + " " + int2str(-1*var_x[i][j]));
+                clauseHard.push_back(int2str(-1*var_x[i][j]) + " " + int2str(var_y[i][j]));
+                clauseHard.push_back(int2str(var_x[i][j]) + " " + int2str(-1*var_y[i][j]));
+            }
+            else if (mat[i][j] == 1)
+            {
+                numOne++;
+                clauseSoft.push_back(str_fpWeight + " " + int2str(-1*var_x[i][j]));
+                clauseHard.push_back(int2str(var_x[i][j]) + " " + int2str(var_y[i][j]));
+                clauseHard.push_back(int2str(-1*var_x[i][j]) + " " + int2str(-1*var_y[i][j]));
+            }
+            else // mat[i][j] == 2 (not available)
+            {
+                numTwo++;
+                clauseHard.push_back(int2str(-1*var_x[i][j]) + " " + int2str(var_y[i][j]));
+                clauseHard.push_back(int2str(var_x[i][j]) + " " + int2str(-1*var_y[i][j]));
+            }
+        }
+    }
 }
 
 void add_conflict_clauses()
 {
-	int i;
-	int p, q;
-	for(i = 0; i < numCell; i++)
-	{
-		for(p = 0; p < numMut; p++)
-		{
-			for(q = p; q < numMut; q++)
-			{
-				// ~Yip v ~Yiq v Bpq11
-				clauseHard.push_back(int2str(-1*var_y[i][p]) + " " + int2str(-1*var_y[i][q]) + " " + int2str(var_b[p][q][1][1]));
-				// Yip v ~Yiq v Bpq01
-				clauseHard.push_back(int2str(var_y[i][p]) + " " + int2str(-1*var_y[i][q]) + " " + int2str(var_b[p][q][0][1]));
-				// ~Yip v Yiq v Bpq10
-				clauseHard.push_back(int2str(-1*var_y[i][p]) + " " + int2str(var_y[i][q]) + " " + int2str(var_b[p][q][1][0]));
+    int i;
+    int p, q;
+    for(i = 0; i < numCell; i++)
+    {
+        for(p = 0; p < numMut; p++)
+        {
+            for(q = p; q < numMut; q++)
+            {
+                // ~Yip v ~Yiq v Bpq11
+                clauseHard.push_back(int2str(-1*var_y[i][p]) + " " + int2str(-1*var_y[i][q]) + " " + int2str(var_b[p][q][1][1]));
+                // Yip v ~Yiq v Bpq01
+                clauseHard.push_back(int2str(var_y[i][p]) + " " + int2str(-1*var_y[i][q]) + " " + int2str(var_b[p][q][0][1]));
+                // ~Yip v Yiq v Bpq10
+                clauseHard.push_back(int2str(-1*var_y[i][p]) + " " + int2str(var_y[i][q]) + " " + int2str(var_b[p][q][1][0]));
                 if(par_maxColRemove > 0) // column elimination enabled
                 {
                     // Kp v Kq v ~Bpq01 v ~Bpq10 v ~Bpq11
@@ -351,9 +353,9 @@ void add_conflict_clauses()
                     // ~Bpq01 v ~Bpq10 v ~Bpq11
                     clauseHard.push_back(int2str(-1*var_b[p][q][0][1]) + " " + int2str(-1*var_b[p][q][1][0]) + " " + int2str(-1*var_b[p][q][1][1]));
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 }
 
 int next_comb(int comb[], int k, int n)
@@ -397,40 +399,98 @@ void add_column_clauses()
     }while(next_comb(comb, k, n));
 }
 
-void write_maxsat_input(string path)
+void add_column_clauses_weight()
 {
-	int i, j;
-	int hardWeight = numZero * par_fnWeight + numOne * par_fpWeight + 1;
-	ofstream fout(path.c_str());
-	if(fout.is_open() == false)
-	{
-        cerr<< "Could not open file: " << path << endl;
-        exit(EXIT_FAILURE);
-	}
-	//
-	if(IS_PWCNF)
-	{
-        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK << " " << clauseSoft.size() + clauseHard.size() << " " << hardWeight << "\n";
-	}
-	else
-	{
-        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK << " " << clauseSoft.size() + clauseHard.size() << "\n";
-	}
-	// soft clauses
-	for(i = 0; i < clauseSoft.size(); i++)
-	{
-		fout<< clauseSoft[i] << " 0\n";
-	}
-	// hard clauses
-	for(i = 0; i < clauseHard.size(); i++)
-	{
-		fout<< hardWeight << " " << clauseHard[i] << " 0\n";
-	}
-
-	fout.close();
+    int i;
+    // int colWeight = numCell / 2;
+    // int colWeight = 20;
+    string str_colWeight = int2str(par_colWeight);
+    for(i = 0; i < numMut; i++)
+    {
+        clauseSoft.push_back(str_colWeight + " " + int2str(-1*var_k[i]));
+    }
 }
 
-bool read_maxsat_output(string path, int &flip, int &flip01, int &flip10, int &flip20, int &flip21)
+void write_maxsat_input(string path)
+{
+    int i, j;
+    int hardWeight = numZero * par_fnWeight + numOne * par_fpWeight + 1;
+    ofstream fout(path.c_str());
+    if(fout.is_open() == false)
+    {
+        cerr<< "Could not open file: " << path << endl;
+        exit(EXIT_FAILURE);
+    }
+    //
+    if(IS_PWCNF)
+    {
+        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK << " " << clauseSoft.size() + clauseHard.size() << " " << hardWeight << "\n";
+    }
+    else
+    {
+        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK << " " << clauseSoft.size() + clauseHard.size() << "\n";
+    }
+    // soft clauses
+    for(i = 0; i < clauseSoft.size(); i++)
+    {
+        fout<< clauseSoft[i] << " 0\n";
+    }
+    // hard clauses
+    for(i = 0; i < clauseHard.size(); i++)
+    {
+        fout<< hardWeight << " " << clauseHard[i] << " 0\n";
+    }
+
+    fout.close();
+}
+
+bool read_maxsat_output_columnElim(string path, int &numRemovedCol, set<int> &removedCol)
+{
+    numRemovedCol = 0;
+    string line;
+    bool oLine = false, sLine = false, vLine = false;
+    ifstream fin(path.c_str());
+    if(fin.is_open() == false)
+    {
+        cerr<< "Could not open file: " << path << endl;
+        exit(EXIT_FAILURE);
+    }
+    // parse
+    while(getline(fin, line))
+    {
+        if(line[0] == 'o')
+        {
+            oLine = true;
+        }
+        if(line[0] == 's')
+        {
+            sLine = true;
+        }
+        if(line[0] == 'v')
+        {
+            vLine = true;
+            // update the input matrix
+            int tmpVar, tmpVarAbs;
+            istringstream sin(line.substr(1));
+            while(sin >> tmpVar)
+            {
+                tmpVarAbs = abs(tmpVar);
+                if(tmpVarAbs > numVarY + numVarX + numVarB) // it is a k variable
+                {
+                    if(tmpVar > 0) // column to be removed
+                    {
+                        numRemovedCol++;
+                        removedCol.insert(tmpVar - (numVarY + numVarX + numVarB) - 1); // 0-based index
+                    }
+                }
+            }
+        }
+    }
+    fin.close();
+    return (oLine && sLine && vLine);
+}
+
+bool read_maxsat_output_bitFlips(string path, int &flip, int &flip01, int &flip10, int &flip20, int &flip21, set<int> &removedCol)
 {
     flip = 0;
     flip01 = 0;
@@ -464,44 +524,45 @@ bool read_maxsat_output(string path, int &flip, int &flip01, int &flip10, int &f
             istringstream sin(line.substr(1));
             while(sin >> tmpVar)
             {
-            	tmpVarAbs = abs(tmpVar);
-                if(tmpVarAbs <= numVarY)
+                tmpVarAbs = abs(tmpVar);
+                // if(tmpVarAbs <= numVarY && removedCol.find(tmpVarAbs) == removedCol.end())
+                if(tmpVarAbs <= numVarY && removedCol.find(map_y2ij[tmpVarAbs].second) == removedCol.end())
                 {
-                	oldVal = mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second];
+                    oldVal = mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second];
 
-                	if(oldVal == 0)
-                	{
-                		if(tmpVar > 0)
-                		{
-                			flip++;
-                			flip01++;
-                			mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 1;
-                		}
-                	}
-                	else if(oldVal == 1)
-                	{
-                		if(tmpVar < 0)
-                		{
-                			flip++;
-                			flip10++;
-                			mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 0;
-                		}
-                	}
-                	else // oldVal == 2
-                	{
-                		if(tmpVar < 0)
-                		{
-                			flip++;
-                			flip20++;
-                			mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 0;
-                		}
-                		else // tmpVar > 0
-                		{
-                			flip++;
-                			flip21++;
-                			mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 1;
-                		}
-                	}
+                    if(oldVal == 0)
+                    {
+                        if(tmpVar > 0)
+                        {
+                            flip++;
+                            flip01++;
+                            mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 1;
+                        }
+                    }
+                    else if(oldVal == 1)
+                    {
+                        if(tmpVar < 0)
+                        {
+                            flip++;
+                            flip10++;
+                            mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 0;
+                        }
+                    }
+                    else // oldVal == 2
+                    {
+                        if(tmpVar < 0)
+                        {
+                            flip++;
+                            flip20++;
+                            mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 0;
+                        }
+                        else // tmpVar > 0
+                        {
+                            flip++;
+                            flip21++;
+                            mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 1;
+                        }
+                    }
                 }
             }
         }
@@ -510,14 +571,15 @@ bool read_maxsat_output(string path, int &flip, int &flip01, int &flip10, int &f
     return (oLine && sLine && vLine);
 }
 
-void write_output_matrix(string path)
+void write_output_matrix(string path, set<int> &removedCol)
 {
     int i, j;
     ofstream fout(path.c_str());
     // header
     for(i = 0; i < mutId.size(); i++)
     {
-        fout<< mutId[i] << (i < mutId.size() - 1 ? "\t" : "");
+        if(removedCol.find(i-1) == removedCol.end()) // column not removed
+            fout<< mutId[i] << "\t";
     }
     fout<< "\n";
     //content
@@ -526,7 +588,8 @@ void write_output_matrix(string path)
         fout<< cellId[i] << "\t";
         for(j = 0; j < numMut; j++)
         {
-            fout<< mat[i][j] << (j < numMut - 1 ? "\t" : "");
+            if(removedCol.find(j) == removedCol.end()) // column not removed
+                fout<< mat[i][j] << "\t";
         }
         fout<< "\n";
     }
@@ -576,17 +639,17 @@ string get_exe_path()
 
 // double getCpuTime()
 // {
-// 	struct rusage t;
-// 	getrusage(RUSAGE_SELF, &t);
-// 	return t.ru_utime.tv_sec + t.ru_utime.tv_usec / 1000000.0 + t.ru_stime.tv_sec + t.ru_stime.tv_usec / 1000000.0;
+//  struct rusage t;
+//  getrusage(RUSAGE_SELF, &t);
+//  return t.ru_utime.tv_sec + t.ru_utime.tv_usec / 1000000.0 + t.ru_stime.tv_sec + t.ru_stime.tv_usec / 1000000.0;
 // }
 
 double getRealTime()
 {
-	struct timeval t;
-	struct timezone tz;
-	gettimeofday(&t, &tz);
-	return t.tv_sec + t.tv_usec / 1000000.0;
+    struct timeval t;
+    struct timezone tz;
+    gettimeofday(&t, &tz);
+    return t.tv_sec + t.tv_usec / 1000000.0;
 }
 
 int main(int argc, char *argv[])
@@ -601,17 +664,17 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-	string cmd;
+    string cmd;
     
     string exeDir = get_dir_path(get_exe_path());
     // qmaxsat or openwbo
     string maxSAT_exe;
     if(MAX_SOLVER == "qmaxsat")
-    	maxSAT_exe = exeDir + "/solver/qmaxsat/qmaxsat14.04auto-glucose3_static";
+        maxSAT_exe = exeDir + "/solver/qmaxsat/qmaxsat14.04auto-glucose3_static";
     else if(MAX_SOLVER == "openwbo")
-    	maxSAT_exe = exeDir + "/solver/open-wbo/open-wbo_glucose4.1_static";
+        maxSAT_exe = exeDir + "/solver/open-wbo/open-wbo_glucose4.1_static";
     else
-    	maxSAT_exe = "noSolver";
+        maxSAT_exe = "noSolver";
 
     // create working directory if does not exist
     // FIXME: use a more portable mkdir... int mkdir(const char *path, mode_t mode);
@@ -629,26 +692,35 @@ int main(int argc, char *argv[])
     fLog<< fixed;
 
     // double cpuTime = getCpuTime();
-	double realTime = getRealTime();
+    double realTime = getRealTime();
 
-	get_input_data(par_inputFile);
+    get_input_data(par_inputFile);
     fLog<< "FILE_NAME: " << get_file_name(par_inputFile) << "\n";
     fLog<< "NUM_CELLS(ROWS): " << numCell << "\n";
     fLog<< "NUM_MUTATIONS(COLUMNS): " << numMut << "\n";
     fLog<< "FN_WEIGHT: " << par_fnWeight << "\n";
     fLog<< "FP_WEIGHT: " << par_fpWeight << "\n";
     fLog<< "NUM_THREADS: " << par_threads << "\n";
-	// formulate as Max-SAT
-	set_y_variables();
-	set_x_variables();
-	set_b_variables();
+    // set weights according to the new formulation
+    par_colWeight = par_maxColRemove;
+    // formulate as Max-SAT
+    set_y_variables();
+    set_x_variables();
+    set_b_variables();
     if(par_maxColRemove > 0) // column elimination enabled
+    {
         set_k_variables();
-	add_variable_clauses();
-	add_conflict_clauses();
-    if(par_maxColRemove > 0) // column elimination enabled
-        add_column_clauses();
-	write_maxsat_input(fileName + ".maxSAT.in");
+        add_variable_clauses();
+        add_conflict_clauses();
+        // add_column_clauses();
+        add_column_clauses_weight();
+    }
+    else
+    {
+        add_variable_clauses();
+        add_conflict_clauses();
+    }
+    write_maxsat_input(fileName + ".maxSAT.in");
     
     // run Max-SAT solver
     double maxsatTime = getRealTime();
@@ -656,33 +728,49 @@ int main(int argc, char *argv[])
     system(cmd.c_str());
     maxsatTime = getRealTime() - maxsatTime;
 
-    exit(0);
+    int numFlip = 0;
+    int numFlip01 = 0;
+    int numFlip10 = 0;
+    int numFlip20 = 0;
+    int numFlip21 = 0;
+    int numRemovedCol = 0;
+    set<int> removedCol;
 
-    int numFlip = -1;
-    int numFlip01 = -1;
-    int numFlip10 = -1;
-    int numFlip20 = -1;
-    int numFlip21 = -1;
-
-    if(read_maxsat_output(fileName + ".maxSAT.out", numFlip, numFlip01, numFlip10, numFlip20, numFlip21) == false)
+    if(par_maxColRemove > 0)
+    {
+        if(read_maxsat_output_columnElim(fileName + ".maxSAT.out", numRemovedCol, removedCol) == false)
+        {
+            cerr<< "[ERROR] Max-SAT solver faild!"<< endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+    //
+    if(read_maxsat_output_bitFlips(fileName + ".maxSAT.out", numFlip, numFlip01, numFlip10, numFlip20, numFlip21, removedCol) == false)
     {
         cerr<< "[ERROR] Max-SAT solver faild!"<< endl;
         exit(EXIT_FAILURE);
     }
 
     // solution is found, save it!
-    write_output_matrix(fileName + ".output");
+    write_output_matrix(fileName + ".output", removedCol);
     fLog<< "MODEL_SOLVING_TIME_SECONDS: " << maxsatTime << "\n";
     fLog<< "RUNNING_TIME_SECONDS: " << getRealTime() - realTime << "\n";
     fLog<< "IS_CONFLICT_FREE: " << "YES" << "\n"; // FIXME: write the function
     fLog<< "TOTAL_FLIPS_REPORTED: " << numFlip01 + numFlip10 << "\n";
     fLog<< "0_1_FLIPS_REPORTED: " << numFlip01 << "\n";
     fLog<< "1_0_FLIPS_REPORTED: " << numFlip10 << "\n";
-    fLog<< "2_0_FLIPS_REPORTED: " << numFlip20 << "\n"; // FIXME: 
-    fLog<< "2_1_FLIPS_REPORTED: " << numFlip21 << "\n"; // FIXME: 
-    fLog<< "MUTATIONS_REMOVED_UPPER_BOUND: " << par_maxColRemove << "\n"; // FIXME: 
-    fLog<< "MUTATIONS_REMOVED_NUM: " << 0 << "\n"; // FIXME: 
-    fLog<< "MUTATIONS_REMOVED_INDEX: " << "\n"; // FIXME: 
+    fLog<< "2_0_FLIPS_REPORTED: " << numFlip20 << "\n";
+    fLog<< "2_1_FLIPS_REPORTED: " << numFlip21 << "\n";
+    fLog<< "MUTATIONS_REMOVED_UPPER_BOUND: " << par_maxColRemove << "\n";
+    fLog<< "MUTATIONS_REMOVED_NUM: " << numRemovedCol << "\n";
+    fLog<< "MUTATIONS_REMOVED_INDEX: ";
+    int ii;
+    set<int>::iterator it;
+    for(ii = 1, it = removedCol.begin(); it != removedCol.end(); it++, ii++)
+    {
+        fLog<< (*it)+1 << (ii < removedCol.size() ? "," : "");
+    }
+    fLog << "\n";
 
     fLog.close();
 
@@ -691,5 +779,5 @@ int main(int argc, char *argv[])
     if(remove((fileName + ".maxSAT.out").c_str()) != 0 )
         cerr<< "Could not remove file:" << fileName + ".maxSAT.out" << endl;
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
