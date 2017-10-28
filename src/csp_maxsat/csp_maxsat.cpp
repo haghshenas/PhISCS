@@ -26,6 +26,8 @@ int     par_fnWeight = -1;
 int     par_fpWeight = -1;
 int     par_colWeight = -1;
 int     par_maxColRemove = 0;
+string  par_bulkFile = "";
+double  par_delta = 0.025;
 int     par_threads = 1;
 bool    IS_PWCNF = true;
 string  MAX_SOLVER = "openwbo";
@@ -38,19 +40,30 @@ int var_y[MAX_CELL][MAX_MUT]; // Y variables for the maxSAT; if(Iij==0) Yij=Xij 
 int weight_x[MAX_CELL][MAX_MUT]; // weight of X variables
 int var_b[MAX_MUT][MAX_MUT][2][2];
 int var_k[MAX_MUT];
+int var_a[MAX_MUT][MAX_MUT];
+double vaf[MAX_MUT];
+int vafP[MAX_MUT][MAX_MUT];
+int vafT[MAX_MUT][MAX_MUT][MAX_MUT];
 pair<int, int> map_y2ij[MAX_CELL * MAX_MUT + 10]; // maps Y variables to matrix position (row and column)
 vector<string> clauseSoft; // the set of soft clauses for wcnf formulation
 vector<string> clauseHard; // the set of soft clauses for wcnf formulation
 
-int numMut; // actual number of mutations (columns)
-int numCell; // actual number of cells (rows)
-int numVarY; // number of Y variables
-int numVarX; // number of X variables
-int numVarB; // number of B variables
-int numVarK; // number of K variables
-int numZero; // number of zeros in the input matrix
-int numOne; // number of ones in the input matrix
-int numTwo; // number of twos in the input matrix
+int numMut = 0; // actual number of mutations (columns)
+int numCell = 0; // actual number of cells (rows)
+int numVarY = 0; // number of Y variables
+int numVarX = 0; // number of X variables
+int numVarB = 0; // number of B variables
+int numVarK = 0; // number of K variables
+int numVarA = 0; // number of A variables
+int numZero = 0; // number of zeros in the input matrix
+int numOne = 0; // number of ones in the input matrix
+int numTwo = 0; // number of twos in the input matrix
+
+// #define startVarY (0)
+#define startVarX (numVarY)
+#define startVarB (numVarY + numVarX)
+#define startVarK (numVarY + numVarX + numVarB)
+#define startVarA (numVarY + numVarX + numVarB + numVarK)
 
 string int2str(int n)
 {
@@ -67,11 +80,19 @@ int str2int(string s)
     return retVal;
 }
 
+double str2double(string s)
+{
+    double retVal;
+    istringstream sin(s.c_str());
+    sin >> retVal;
+    return retVal;
+}
+
 void print_usage()
 {
     cout<< endl
         << "usage: csp_maxsat [-h] -f FILE -n FNWEIGHT -p FPWEIGHT -o OUTDIR" << endl
-        << "                  [-m MAXMUT] [-t THREADS]" << endl;
+        << "                  [-m MAXMUT] [-b BULK] [-e DELTA] [-t THREADS]" << endl;
 }
 
 void print_help()
@@ -85,6 +106,8 @@ void print_help()
         << endl
         << "Optional arguments:" << endl
         << "   -m, --maxMut   INT        Max number mutations to be eliminated [0]" << endl
+        << "   -b, --bulk     INT        Bulk sequencing file [""]" << endl
+        << "   -e, --delta    FLT        Delta in VAF [0.01]" << endl
         << "   -t, --threads  INT        Number of threads [1]" << endl
         << endl
         << "Other arguments:" << endl
@@ -103,12 +126,14 @@ bool command_line_parser(int argc, char *argv[])
         {"fnWeight",               required_argument,  0,                  'p'},
         {"outDir",                 required_argument,  0,                  'o'},
         {"maxMut",                 required_argument,  0,                  'm'},
+        {"bulk",                   required_argument,  0,                  'b'},
+        {"delta",                  required_argument,  0,                  'e'},
         {"threads",                required_argument,  0,                  't'},
         {"help",                   no_argument,        0,                  'h'},
         {0,0,0,0}
     };
 
-    while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:t:h", longOptions, &index))!= -1 )
+    while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:b:e:t:h", longOptions, &index))!= -1 )
     {
         switch (c)
         {
@@ -139,6 +164,17 @@ bool command_line_parser(int argc, char *argv[])
                 if(par_maxColRemove < 0)
                 {
                     cerr<< "[ERROR] Maximum number of mutation removal should be an integer >= 0" << endl;
+                    return false;
+                }
+                break;
+            case 'b':
+                par_bulkFile = optarg;
+                break;
+            case 'e':
+                par_delta = str2double(optarg);
+                if(par_delta <= 0)
+                {
+                    cerr<< "[ERROR] Delta should be a floating point number > 0" << endl;
                     return false;
                 }
                 break;
@@ -250,7 +286,7 @@ void set_x_variables()
         for(j = 0; j < numMut; j++)
         {
             numVarX++;
-            var_x[i][j] = numVarY + numVarX;
+            var_x[i][j] = startVarX + numVarX;
         }
     }
 }
@@ -269,7 +305,7 @@ void set_b_variables()
                 for(j = 0; j < 2; j++)
                 {
                     numVarB++;
-                    var_b[p][q][i][j] = numVarY + numVarX + numVarB;
+                    var_b[p][q][i][j] = startVarB + numVarB;
                 }
             }
         }
@@ -284,7 +320,22 @@ void set_k_variables()
     for(p = 0; p < numMut; p++)
     {
         numVarK++;
-        var_k[p] = numVarY + numVarX + numVarB + numVarK;
+        var_k[p] = startVarK + numVarK;
+    }
+}
+
+void set_a_variables()
+{
+    int p, q;
+    numVarA = 0;
+
+    for(p = 0; p < numMut; p++)
+    {
+        for(q = 0; q < numMut; q++)
+        {
+            numVarA++;
+            var_a[p][q] = startVarA + numVarA;  
+        }
     }
 }
 
@@ -411,10 +462,100 @@ void add_column_clauses_weight()
     }
 }
 
+void add_vaf_clauses()
+{
+    int t, r;
+    int p, q;
+    // a(p,p) = 0
+    // ~a(p,p)
+    for(p = 0; p < numMut; p++)
+    {
+        clauseHard.push_back(int2str(-1*var_a[p][p]));
+    }
+    // 1.(a): ~a(p,q) v ~a(q,p)
+    for(p = 0; p < numMut; p++)
+    {
+        for(q = 0; q < numMut; q++)
+        {
+            // if(p != q) // FIXME: should I have this condition or not?
+            {
+                clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_a[q][p]));
+            }
+        }
+    }
+    // 1.(b): (a(p,q) v a(q,p)) => (~K(p) ^ ~K(q))
+    //        (~K(p) v ~a(p,q)) ^ (~K(p) v ~a(q,p)) ^ (~a(p,q) v ~K(q)) ^ (~a(q,p) v ~K(q))
+    if(par_maxColRemove > 0) // FIXME: should I have this condition or not?
+    {
+        for(p = 0; p < numMut; p++)
+        {
+            for(q = 0; q < numMut; q++)
+            {
+                // if(p != q) // FIXME: should I have this condition or not?
+                {
+                    clauseHard.push_back(int2str(-1*var_k[p]) + " " + int2str(-1*var_a[q][p]));
+                    clauseHard.push_back(int2str(-1*var_k[p]) + " " + int2str(-1*var_a[q][p]));
+                    clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_k[q]));
+                    clauseHard.push_back(int2str(-1*var_a[q][p]) + " " + int2str(-1*var_k[q]));
+                }
+            }
+        }
+    }
+    // 1.(c): (a(p,q) ^ Y(t, q)) => (a(p,q) ^ Y(t,p))
+    // 1.(c): ~a(p,q) v ~Y(t, q) v ~Y(t,p)
+    for(t = 0; t < numCell; t++)
+    {
+        for(p = 0; p < numMut; p++)
+        {
+            for(q = 0; q < numMut; q++)
+            {
+                // if(p != q) // FIXME: should I have this condition or not?
+                {
+                    clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_y[t][q]) + " " + int2str(-1*var_y[t][p]));
+                }
+            }
+        }
+    }
+    // 1.(d): a(p,q) => vafP(p,q)
+    //        ~a(p,q) v vafP(p,q)
+    for(p = 0; p < numMut; p++)
+    {
+        for(q = 0; q < numMut; q++)
+        {
+            // if(p != q) // FIXME: should I have this condition or not?
+            {
+                if(vafP[p][q] == 0)
+                {
+                    clauseHard.push_back(int2str(-1*var_a[p][q]));  
+                }
+            }
+        }
+    }
+    // 2.: (a(p,q) ^ a(p,r) ^ ~a(q,r) ^ ~a(r,q)) => vafT(p,q,r)
+    //     ~a(p,q) v ~a(p,r) v a(q,r) v a(r,q) v vafT(p,q,r)
+    for(p = 0; p < numMut; p++)
+    {
+        for(q = 0; q < numMut; q++)
+        {
+            for(r = 0; r < numMut; r++)
+            {
+                if(q < r) // FIXME: double check
+                {
+                    if(vafT[p][q][r] == 0)
+                    {
+                        clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_a[p][r]) + " " + int2str(var_a[q][r]) + " " + int2str(var_a[r][q]));
+                    }
+                }
+            }
+        }
+    }
+}
+
 void write_maxsat_input(string path)
 {
     int i, j;
-    int hardWeight = numZero * par_fnWeight + numOne * par_fpWeight + 1;
+    // int hardWeight = numZero * par_fnWeight + numOne * par_fpWeight + 1;
+    int hardWeight = numZero * par_fnWeight + numOne * par_fpWeight + numMut * par_colWeight + 1;
     ofstream fout(path.c_str());
     if(fout.is_open() == false)
     {
@@ -424,11 +565,11 @@ void write_maxsat_input(string path)
     //
     if(IS_PWCNF)
     {
-        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK << " " << clauseSoft.size() + clauseHard.size() << " " << hardWeight << "\n";
+        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK + numVarA << " " << clauseSoft.size() + clauseHard.size() << " " << hardWeight << "\n";
     }
     else
     {
-        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK << " " << clauseSoft.size() + clauseHard.size() << "\n";
+        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK + numVarA << " " << clauseSoft.size() + clauseHard.size() << "\n";
     }
     // soft clauses
     for(i = 0; i < clauseSoft.size(); i++)
@@ -475,7 +616,7 @@ bool read_maxsat_output_columnElim(string path, int &numRemovedCol, set<int> &re
             while(sin >> tmpVar)
             {
                 tmpVarAbs = abs(tmpVar);
-                if(tmpVarAbs > numVarY + numVarX + numVarB) // it is a k variable
+                if(startVarK < tmpVarAbs && tmpVarAbs <= startVarK + numVarK) // it is a k variable
                 {
                     if(tmpVar > 0) // column to be removed
                     {
@@ -597,6 +738,68 @@ void write_output_matrix(string path, set<int> &removedCol)
     fout.close();
 }
 
+void get_bulk_data(string path)
+{
+    int p, q, r;
+    string tmpStr;
+    double tmpFlt;
+    int refCount, mutCount;
+    string line;
+    ifstream fin(path.c_str());
+    if(fin.is_open() == false)
+    {
+        cerr<< "Could not open file: " << path << endl;
+        exit(EXIT_FAILURE);
+    }
+    // get header line
+    getline(fin, line);
+    // get VAF information
+    p = 0;
+    while(getline(fin, line))
+    {
+        istringstream sin(line);
+        sin >> tmpStr;
+        sin >> tmpStr;
+        sin >> tmpStr;
+        sin >> mutCount;
+        sin >> refCount;
+        vaf[p++] = (double)mutCount/(mutCount + refCount);
+    }
+    // calc vafP
+    for(p = 0; p < numMut; p++)
+    {
+        for(q = 0; q < numMut; q++)
+        {
+            if(vaf[p]*(1+par_delta) >= vaf[q])
+            {
+                vafP[p][q] = 1;
+            }
+            else
+            {
+                vafP[p][q] = 0;
+            }
+        }
+    }
+    // calc vafT
+    for(p = 0; p < numMut; p++)
+    {
+        for(q = 0; q < numMut; q++)
+        {
+            for(r = 0; r < numMut; r++)
+            {
+                if(vaf[p]*(1+par_delta) >= vaf[q] + vaf[r])
+                {
+                    vafT[p][q][r] = 1;
+                }
+                else
+                {
+                    vafT[p][q][r] = 0;
+                }   
+            }
+        }
+    }
+}
+
 string get_file_name(string path, bool removExtension = false)
 {
     string fileName;
@@ -681,30 +884,50 @@ int main(int argc, char *argv[])
     cmd = "mkdir -p " + par_outDir;
     system(cmd.c_str());
     string fileName = par_outDir + "/" + get_file_name(par_inputFile, true);
+    // set weights according to the new formulation
+    if(par_maxColRemove > 0)
+    {
+        // par_colWeight = 0; // for old column elimination formulation
+        par_colWeight = par_maxColRemove;   
+    }
+    else
+    {
+        par_colWeight = 0;
+    }
 
     // double cpuTime = getCpuTime();
     double realTime = getRealTime();
 
     get_input_data(par_inputFile);
-    // set weights according to the new formulation
-    par_colWeight = par_maxColRemove;
-    // formulate as Max-SAT
+    if(par_bulkFile != "")
+    {
+        get_bulk_data(par_bulkFile);
+    }
+    // set variables
     set_y_variables();
     set_x_variables();
     set_b_variables();
     if(par_maxColRemove > 0) // column elimination enabled
     {
         set_k_variables();
-        add_variable_clauses();
-        add_conflict_clauses();
+    }
+    if(par_bulkFile != "")
+    {
+        set_a_variables();
+    }
+    // add clauses
+    add_variable_clauses();
+    add_conflict_clauses();
+    if(par_maxColRemove > 0) // column elimination enabled
+    {
         // add_column_clauses();
         add_column_clauses_weight();
     }
-    else
+    if(par_bulkFile != "")
     {
-        add_variable_clauses();
-        add_conflict_clauses();
+        add_vaf_clauses();
     }
+    //
     write_maxsat_input(fileName + ".maxSAT.in");
     
     // run Max-SAT solver
