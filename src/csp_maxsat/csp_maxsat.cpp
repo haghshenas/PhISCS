@@ -29,6 +29,7 @@ int     par_maxColRemove = 0;
 string  par_bulkFile = "";
 double  par_delta = 0.025;
 int     par_threads = 1;
+bool    par_isTrueVAF = false;
 bool    IS_PWCNF = true;
 string  MAX_SOLVER = "openwbo";
 
@@ -92,7 +93,7 @@ void print_usage()
 {
     cout<< endl
         << "usage: csp_maxsat [-h] -f FILE -n FNWEIGHT -p FPWEIGHT -o OUTDIR" << endl
-        << "                  [-m MAXMUT] [-b BULK] [-e DELTA] [-t THREADS]" << endl;
+        << "                  [-m MAXMUT] [-b BULK] [-e DELTA] [-v] [-t THREADS]" << endl;
 }
 
 void print_help()
@@ -108,6 +109,7 @@ void print_help()
         << "   -m, --maxMut   INT        Max number mutations to be eliminated [0]" << endl
         << "   -b, --bulk     INT        Bulk sequencing file [""]" << endl
         << "   -e, --delta    FLT        Delta in VAF [0.01]" << endl
+        << "   -v,--vafTrue              Use true VAFs instead of noisy VAFs [false]" << endl
         << "   -t, --threads  INT        Number of threads [1]" << endl
         << endl
         << "Other arguments:" << endl
@@ -128,12 +130,13 @@ bool command_line_parser(int argc, char *argv[])
         {"maxMut",                 required_argument,  0,                  'm'},
         {"bulk",                   required_argument,  0,                  'b'},
         {"delta",                  required_argument,  0,                  'e'},
+        {"vafTrue",                no_argument,        0,                  'v'},
         {"threads",                required_argument,  0,                  't'},
         {"help",                   no_argument,        0,                  'h'},
         {0,0,0,0}
     };
 
-    while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:b:e:t:h", longOptions, &index))!= -1 )
+    while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:b:e:t:vh", longOptions, &index))!= -1 )
     {
         switch (c)
         {
@@ -177,6 +180,9 @@ bool command_line_parser(int argc, char *argv[])
                     cerr<< "[ERROR] Delta should be a floating point number > 0" << endl;
                     return false;
                 }
+                break;
+            case 'v':
+                par_isTrueVAF = true;
                 break;
             case 't':
                 par_threads = str2int(optarg);
@@ -744,6 +750,7 @@ void get_bulk_data(string path)
     string tmpStr;
     double tmpFlt;
     int refCount, mutCount;
+    string info;
     string line;
     ifstream fin(path.c_str());
     if(fin.is_open() == false)
@@ -757,13 +764,21 @@ void get_bulk_data(string path)
     p = 0;
     while(getline(fin, line))
     {
-        istringstream sin(line);
-        sin >> tmpStr;
-        sin >> tmpStr;
-        sin >> tmpStr;
-        sin >> mutCount;
-        sin >> refCount;
-        vaf[p++] = (double)mutCount/(mutCount + refCount);
+        if(par_isTrueVAF == false)
+        {
+            istringstream sin(line);
+            sin >> tmpStr;
+            sin >> tmpStr;
+            sin >> tmpStr;
+            sin >> mutCount;
+            sin >> refCount;
+            vaf[p++] = (double)mutCount/(mutCount + refCount);
+        }
+        else
+        {
+            int pos = line.find("trueVAF=");
+            vaf[p++] = str2double(line.substr(pos+8, line.find(';', pos) - (pos + 8)));
+        }
     }
     // calc vafP
     for(p = 0; p < numMut; p++)
