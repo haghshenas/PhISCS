@@ -975,12 +975,13 @@ int main(int argc, char *argv[])
     }
 
     // solution is found, save it!
-    write_output_matrix(fileName + ".output", removedCol);
+    // write_output_matrix(fileName + ".output", removedCol);
+    write_output_matrix(fileName + ".CSP.conflictFreeMatrix", removedCol);
     // report the log file
-    ofstream fLog((fileName + ".log").c_str());
+    ofstream fLog((fileName + ".CSP.log").c_str());
     if(fLog.is_open() == false)
     {
-        cerr<< "Could not open file: " << fileName + ".log" << endl;
+        cerr<< "Could not open file: " << fileName + ".CSP.log" << endl;
         exit(EXIT_FAILURE);
     }
     fLog.precision(3);
