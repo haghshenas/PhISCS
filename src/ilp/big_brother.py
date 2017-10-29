@@ -76,7 +76,7 @@ if args.bulk:
         bulkfile.readline()
         for line in bulkfile:
             values = line.split('\t')
-            vaf = float(values[3]) / float(values[4])
+            vaf = float(values[3]) / (float(values[4])+float(values[3]))
             bulk_mutations.append(vaf)
 
 # =========== VARIABLES
