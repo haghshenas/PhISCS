@@ -336,7 +336,7 @@ except OSError as exc:
 
 filename = os.path.splitext(os.path.basename(args.file))[0]
 outfile = os.path.join(args.outDir, filename)
-file_out = open('{0}.output'.format(outfile), 'w+')
+file_out = open('{0}.ILP.conflictFreeMatrix'.format(outfile), 'w+')
 
 # --- Solution info
 removed_cols = []
@@ -398,7 +398,7 @@ sol_matrix = np.array(sol_matrix)
 file_out.close()
 
 
-log = open('{0}.log'.format(outfile), 'w+')
+log = open('{0}.ILP.log'.format(outfile), 'w+')
 # --- Input info
 log.write('FILE_NAME: {0}\n'.format(str(os.path.basename(args.file))))
 log.write('NUM_CELLS(ROWS): {0}\n'.format(str(cells)))
