@@ -44,7 +44,7 @@ parser.add_argument('-b', '--bulk', default=None,
 parser.add_argument('-e', '--delta', default=0.01,
                     type=float,
                     help='Delta in VAF [0.01]')
-parser.add_arguments('--truevaf',  action='store_true',
+parser.add_argument('--truevaf',  action='store_true',
                     help='Use tree VAFs')
 
 args = parser.parse_args()
@@ -150,7 +150,7 @@ K = {}
 m = 0
 while m < mutations:
     K[m] = model.addVar(vtype=GRB.BINARY,
-                        obj=agrs.colWeight,
+                        obj=args.colWeight,
                         name='K[{0}]'.format(m))
     m += 1
 
@@ -446,8 +446,8 @@ log.write('2_0_FLIPS_REPORTED: {0}\n'.format(
     str(sol_20_tot)))
 log.write('2_1_FLIPS_REPORTED: {0}\n'.format(
     str(sol_21_tot)))
-log.write('MUTATIONS_REMOVED_UPPER_BOUND: {0}\n'.format(
-    str(args.maxMut)))
+# log.write('MUTATIONS_REMOVED_UPPER_BOUND: {0}\n'.format(
+#     str(args.maxMut)))
 log.write('MUTATIONS_REMOVED_NUM: {0}\n'. format(
     str(sum(removed_cols))))
 log.write('MUTATIONS_REMOVED_INDEX: {0}\n'.format(
