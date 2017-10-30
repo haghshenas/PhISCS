@@ -1,4 +1,4 @@
-cellID/mutID	mut10	mut16	mut11	mut13	mut2	mut3	mut12	mut1	mut6	mut7	mut4	mut5	mut14	mut8	mut9	mut15
+cellID/mutID	PLEC	ZC3H3	RIMS2	SIGLEC10	BDNF	BRD7P3	RRP8	ATRNL1	FGD4	INHA	CMTM8	FAM105A	TRRAP	LINC00052	PCDH7	XPO7
 cell0	0	1	0	1	0	0	0	0	0	0	0	0	0	0	0	1
 cell1	0	0	1	1	1	0	1	0	1	0	1	1	0	0	1	0
 cell2	1	1	1	1	1	0	1	1	1	0	0	1	0	0	0	0

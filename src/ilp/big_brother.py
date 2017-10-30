@@ -26,11 +26,15 @@ parser.add_argument('-p', '--fpWeight', required=True,
 parser.add_argument('-o', '--outDir', required=True,
                     type=str,
                     help='Output directory')
+parser.add_argument('-m', '--colWeight', required=True,
+                    type=int,
+                    help='Weight of eliminated columns')
 
 # Optional:
-parser.add_argument('-m', '--maxMut', default=0,
-                    type=int,
-                    help='Max number mutations to be eliminated [0]')
+# parser.add_argument('-m', '--maxMut', default=0,
+#                     type=int,
+#                     help='Max number mutations to be eliminated [0]')
+
 parser.add_argument('-t', '--threads', default=1,
                     type=int,
                     help='Number of threads [Default is 1]')
@@ -40,6 +44,8 @@ parser.add_argument('-b', '--bulk', default=None,
 parser.add_argument('-e', '--delta', default=0.01,
                     type=float,
                     help='Delta in VAF [0.01]')
+parser.add_arguments('--truevaf',  action='store_true',
+                    help='Use tree VAFs')
 
 args = parser.parse_args()
 
@@ -48,7 +54,7 @@ start_model = datetime.now()
 DELIMITER = '\t'
 
 verbose = False
-tree = True
+tree = False
 
 inp = np.genfromtxt(args.file, skip_header=1, delimiter=DELIMITER)
 
@@ -62,7 +68,7 @@ matrix_input = np.delete(inp, 0, 1)
 cells = matrix_input.shape[0]
 mutations = matrix_input.shape[1]
 
-k_max = args.maxMut
+# k_max = args.maxMut
 
 fn_weight = args.fnWeight
 fp_weight = args.fpWeight
@@ -76,11 +82,14 @@ if args.bulk:
         bulkfile.readline()
         for line in bulkfile:
             values = line.split('\t')
-            vaf = float(values[3]) / (float(values[4])+float(values[3]))
+            if args.truevaf:
+                vaf = float(values[5].split(';')[1].split('=')[1])
+            else:
+                vaf = float(values[3]) / (float(values[4])+float(values[3]))
             bulk_mutations.append(vaf)
 
 # =========== VARIABLES
-model = Model('Reduced ILP')
+model = Model('ILP')
 model.Params.Threads = args.threads
 model.Params.LogFile = ""
 
@@ -141,7 +150,7 @@ K = {}
 m = 0
 while m < mutations:
     K[m] = model.addVar(vtype=GRB.BINARY,
-                        obj=0,
+                        obj=agrs.colWeight,
                         name='K[{0}]'.format(m))
     m += 1
 
@@ -171,7 +180,7 @@ model.update()
 print('Generating constraints...')
 
 # --- sum K_i <= k_max
-model.addConstr(quicksum(K[m] for m in range(mutations)) <= k_max)
+# model.addConstr(quicksum(K[m] for m in range(mutations)) <= k_max)
 
 # --- B(p, q, a, b) variables
 c = 0
