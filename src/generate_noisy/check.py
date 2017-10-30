@@ -50,4 +50,5 @@ if __name__ == "__main__":
 					print 'Wrong Input'
 					sys.exit(2)
 
-	print countNA,'\t', countFN,'\t',countFP,'\t',float(noumberOfOne*fn),'\t',float((noumberOfOne-numberOfOther)*fn),'\t',float(noumberOfOne*fn*0.85)
+	myoutput = str(countNA)+'\t'+str(countFN)+'\t'+str(countFP)#+'\t'+str(float(noumberOfOne*fn))+'\t'+str(float((noumberOfOne-numberOfOther)*fn))+'\t'+str(float(noumberOfOne*fn*0.85))
+	print myoutput
