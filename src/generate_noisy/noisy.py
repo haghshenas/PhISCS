@@ -70,7 +70,8 @@ def introduce_false_both(data, n, m, percfn, percfp, percna):
 					print 'Wrong Input'
 					sys.exit(2)
 
-	print countNA,'\t',countFN,'\t',countFP
+	myoutput = str(countNA)+'\t'+str(countFN)+'\t'+str(countFP)
+	print myoutput
 	return data2
 
 
