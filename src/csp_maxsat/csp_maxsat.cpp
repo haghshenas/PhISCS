@@ -27,11 +27,12 @@ int     par_fpWeight = -1;
 int     par_colWeight = -1;
 int     par_maxColRemove = 0;
 string  par_bulkFile = "";
-double  par_delta = 0.025;
+double  par_delta = 0.01;
+string  par_maxSolver = "openwbo";
 int     par_threads = 1;
 bool    par_isTrueVAF = false;
 bool    IS_PWCNF = true;
-string  MAX_SOLVER = "openwbo";
+string  MAXSAT_EXE;
 
 int mat[MAX_CELL][MAX_MUT]; // the 0/1 matrix
 vector<string> cellId;
@@ -89,6 +90,61 @@ double str2double(string s)
     return retVal;
 }
 
+// double getCpuTime()
+// {
+//  struct rusage t;
+//  getrusage(RUSAGE_SELF, &t);
+//  return t.ru_utime.tv_sec + t.ru_utime.tv_usec / 1000000.0 + t.ru_stime.tv_sec + t.ru_stime.tv_usec / 1000000.0;
+// }
+
+double getRealTime()
+{
+    struct timeval t;
+    struct timezone tz;
+    gettimeofday(&t, &tz);
+    return t.tv_sec + t.tv_usec / 1000000.0;
+}
+
+string get_file_name(string path, bool removExtension = false)
+{
+    string fileName;
+    size_t pos;
+    // extract file name
+    pos = path.find_last_of("/");
+    if(pos != string::npos)
+        fileName = path.substr(pos+1);
+    else
+        fileName = path;
+    // remove extension
+    if(removExtension)
+    {
+        pos = fileName.find_last_of(".");
+        if(pos != string::npos)
+            fileName = fileName.substr(0, pos);
+    }
+    return fileName;
+}
+
+string get_dir_path(string path)
+{
+    size_t pos = path.find_last_of("/");
+    if(pos != string::npos)
+    {
+        return path.substr(0, pos);
+    }
+    else
+    {
+        return "";
+    }
+}
+
+string get_exe_path()
+{
+  char path[10000];
+  ssize_t count = readlink( "/proc/self/exe", path, 10000);
+  return string(path, (count > 0) ? count : 0);
+}
+
 void print_usage()
 {
     cout<< endl
@@ -107,9 +163,11 @@ void print_help()
         << endl
         << "Optional arguments:" << endl
         << "   -m, --maxMut   INT        Max number mutations to be eliminated [0]" << endl
-        << "   -b, --bulk     INT        Bulk sequencing file [""]" << endl
+        << "   -b, --bulk     INT        Bulk sequencing file [\"\"]" << endl
         << "   -e, --delta    FLT        Delta in VAF [0.01]" << endl
-        << "   -v,--vafTrue              Use true VAFs instead of noisy VAFs [false]" << endl
+        << "   -v, --truevaf             Use true VAFs instead of noisy VAFs [false]" << endl
+        << "   -s, --solver   STR        Name of MaxSAT solver. Choises are:" << endl
+        << "                             qmaxsat/maxino/openwbo/aspino/mscg [\"openwbo\"]" << endl
         << "   -t, --threads  INT        Number of threads [1]" << endl
         << endl
         << "Other arguments:" << endl
@@ -131,12 +189,13 @@ bool command_line_parser(int argc, char *argv[])
         {"bulk",                   required_argument,  0,                  'b'},
         {"delta",                  required_argument,  0,                  'e'},
         {"vafTrue",                no_argument,        0,                  'v'},
+        {"solver",                 required_argument,  0,                  's'},
         {"threads",                required_argument,  0,                  't'},
         {"help",                   no_argument,        0,                  'h'},
         {0,0,0,0}
     };
 
-    while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:b:e:t:vh", longOptions, &index))!= -1 )
+    while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:b:e:s:t:vh", longOptions, &index))!= -1 )
     {
         switch (c)
         {
@@ -184,6 +243,9 @@ bool command_line_parser(int argc, char *argv[])
             case 'v':
                 par_isTrueVAF = true;
                 break;
+            case 's':
+                par_maxSolver = optarg;
+                break;
             case 't':
                 par_threads = str2int(optarg);
                 if(par_threads != 1)
@@ -225,6 +287,23 @@ bool command_line_parser(int argc, char *argv[])
         cerr<< "[ERROR] option -p/--fpWeight is required" << endl;
         print_usage();
         return false;
+    }
+
+    string exeDir = get_dir_path(get_exe_path());
+    if(par_maxSolver == "qmaxsat")
+        MAXSAT_EXE = exeDir + "/solver/qmaxsat/qmaxsat14.04auto-glucose3_static";
+    else if(par_maxSolver == "openwbo")
+        MAXSAT_EXE = exeDir + "/solver/open-wbo/open-wbo_glucose4.1_static";
+    else if(par_maxSolver == "maxino")
+        MAXSAT_EXE = exeDir + "/solver/maxino/maxino-2015-k16-static";
+    else if(par_maxSolver == "aspino")
+        MAXSAT_EXE = exeDir + "/solver/aspino/aspino-static -mode=maxsat";
+    else if(par_maxSolver == "mscg")
+        MAXSAT_EXE = exeDir + "/solver/mscg/mscg15b-linux-x86-64";
+    else // wrong solver name, use openwbo
+    {
+        cerr<< "[WARNING] Wrong solver name! Using default solver (openwbo)..." << endl;
+        MAXSAT_EXE = exeDir + "/solver/open-wbo/open-wbo_glucose4.1_static";
     }
 
     return true;
@@ -815,61 +894,6 @@ void get_bulk_data(string path)
     }
 }
 
-string get_file_name(string path, bool removExtension = false)
-{
-    string fileName;
-    size_t pos;
-    // extract file name
-    pos = path.find_last_of("/");
-    if(pos != string::npos)
-        fileName = path.substr(pos+1);
-    else
-        fileName = path;
-    // remove extension
-    if(removExtension)
-    {
-        pos = fileName.find_last_of(".");
-        if(pos != string::npos)
-            fileName = fileName.substr(0, pos);
-    }
-    return fileName;
-}
-
-string get_dir_path(string path)
-{
-    size_t pos = path.find_last_of("/");
-    if(pos != string::npos)
-    {
-        return path.substr(0, pos);
-    }
-    else
-    {
-        return "";
-    }
-}
-
-string get_exe_path()
-{
-  char path[10000];
-  ssize_t count = readlink( "/proc/self/exe", path, 10000);
-  return string(path, (count > 0) ? count : 0);
-}
-
-// double getCpuTime()
-// {
-//  struct rusage t;
-//  getrusage(RUSAGE_SELF, &t);
-//  return t.ru_utime.tv_sec + t.ru_utime.tv_usec / 1000000.0 + t.ru_stime.tv_sec + t.ru_stime.tv_usec / 1000000.0;
-// }
-
-double getRealTime()
-{
-    struct timeval t;
-    struct timezone tz;
-    gettimeofday(&t, &tz);
-    return t.tv_sec + t.tv_usec / 1000000.0;
-}
-
 int main(int argc, char *argv[])
 {
     if(argc <= 1)
@@ -877,32 +901,15 @@ int main(int argc, char *argv[])
         print_usage();
         exit(EXIT_FAILURE);
     }
+
     if(command_line_parser(argc, argv) == false)
     {
         exit(EXIT_FAILURE);
     }
 
-    string cmd;
-    
-    string exeDir = get_dir_path(get_exe_path());
-    // qmaxsat or openwbo
-    string maxSAT_exe;
-    if(MAX_SOLVER == "qmaxsat")
-        maxSAT_exe = exeDir + "/solver/qmaxsat/qmaxsat14.04auto-glucose3_static";
-    else if(MAX_SOLVER == "openwbo")
-        maxSAT_exe = exeDir + "/solver/open-wbo/open-wbo_glucose4.1_static";
-    else if(MAX_SOLVER == "maxino")
-        maxSAT_exe = exeDir + "/solver/maxino/maxino-2015-k16-static";
-    else if(MAX_SOLVER == "aspino")
-        maxSAT_exe = exeDir + "/solver/aspino/aspino-static -mode=maxsat";
-    else if(MAX_SOLVER == "mscg")
-        maxSAT_exe = exeDir + "/solver/mscg/mscg15b-linux-x86-64";
-    else
-        maxSAT_exe = "noSolver";
-
     // create working directory if does not exist
     // FIXME: use a more portable mkdir... int mkdir(const char *path, mode_t mode);
-    cmd = "mkdir -p " + par_outDir;
+    string cmd = "mkdir -p " + par_outDir;
     system(cmd.c_str());
     string fileName = par_outDir + "/" + get_file_name(par_inputFile, true);
     // set weights according to the new formulation
@@ -953,7 +960,7 @@ int main(int argc, char *argv[])
     
     // run Max-SAT solver
     double maxsatTime = getRealTime();
-    cmd = maxSAT_exe + " " + fileName + ".maxSAT.in" + " > " + fileName + ".maxSAT.out";
+    cmd = MAXSAT_EXE + " " + fileName + ".maxSAT.in" + " > " + fileName + ".maxSAT.out";
     system(cmd.c_str());
     maxsatTime = getRealTime() - maxsatTime;
 
