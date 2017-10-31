@@ -891,6 +891,12 @@ int main(int argc, char *argv[])
         maxSAT_exe = exeDir + "/solver/qmaxsat/qmaxsat14.04auto-glucose3_static";
     else if(MAX_SOLVER == "openwbo")
         maxSAT_exe = exeDir + "/solver/open-wbo/open-wbo_glucose4.1_static";
+    else if(MAX_SOLVER == "maxino")
+        maxSAT_exe = exeDir + "/solver/maxino/maxino-2015-k16-static";
+    else if(MAX_SOLVER == "aspino")
+        maxSAT_exe = exeDir + "/solver/aspino/aspino-static -mode=maxsat";
+    else if(MAX_SOLVER == "mscg")
+        maxSAT_exe = exeDir + "/solver/mscg/mscg15b-linux-x86-64";
     else
         maxSAT_exe = "noSolver";
 
