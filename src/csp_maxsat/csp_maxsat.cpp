@@ -551,21 +551,13 @@ void add_vaf_clauses()
 {
     int t, r;
     int p, q;
-    // a(p,p) = 0
-    // ~a(p,p)
-    for(p = 0; p < numMut; p++)
-    {
-        clauseHard.push_back(int2str(-1*var_a[p][p]));
-    }
     // 1.(a): ~a(p,q) v ~a(q,p)
     for(p = 0; p < numMut; p++)
     {
         for(q = 0; q < numMut; q++)
         {
-            // if(p != q) // FIXME: should I have this condition or not?
-            {
-                clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_a[q][p]));
-            }
+            // for all pairs of mutations p and q (including p=q)
+            clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_a[q][p]));
         }
     }
     // 1.(b): (a(p,q) v a(q,p)) => (~K(p) ^ ~K(q))
@@ -576,28 +568,22 @@ void add_vaf_clauses()
         {
             for(q = 0; q < numMut; q++)
             {
-                // if(p != q) // FIXME: should I have this condition or not?
-                {
-                    clauseHard.push_back(int2str(-1*var_k[p]) + " " + int2str(-1*var_a[q][p]));
-                    clauseHard.push_back(int2str(-1*var_k[p]) + " " + int2str(-1*var_a[q][p]));
-                    clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_k[q]));
-                    clauseHard.push_back(int2str(-1*var_a[q][p]) + " " + int2str(-1*var_k[q]));
-                }
+                clauseHard.push_back(int2str(-1*var_k[p]) + " " + int2str(-1*var_a[q][p]));
+                clauseHard.push_back(int2str(-1*var_k[p]) + " " + int2str(-1*var_a[q][p]));
+                clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_k[q]));
+                clauseHard.push_back(int2str(-1*var_a[q][p]) + " " + int2str(-1*var_k[q]));
             }
         }
     }
     // 1.(c): (a(p,q) ^ Y(t, q)) => (a(p,q) ^ Y(t,p))
-    // 1.(c): ~a(p,q) v ~Y(t, q) v ~Y(t,p)
+    //        ~a(p,q) v ~Y(t, q) v ~Y(t,p)
     for(t = 0; t < numCell; t++)
     {
         for(p = 0; p < numMut; p++)
         {
             for(q = 0; q < numMut; q++)
             {
-                // if(p != q) // FIXME: should I have this condition or not?
-                {
-                    clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_y[t][q]) + " " + int2str(-1*var_y[t][p]));
-                }
+                clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_y[t][q]) + " " + int2str(-1*var_y[t][p]));
             }
         }
     }
@@ -607,12 +593,9 @@ void add_vaf_clauses()
     {
         for(q = 0; q < numMut; q++)
         {
-            // if(p != q) // FIXME: should I have this condition or not?
+            if(vafP[p][q] == 0)
             {
-                if(vafP[p][q] == 0)
-                {
-                    clauseHard.push_back(int2str(-1*var_a[p][q]));  
-                }
+                clauseHard.push_back(int2str(-1*var_a[p][q]));
             }
         }
     }
