@@ -632,16 +632,13 @@ void add_vaf_clauses()
         for(q = 0; q <= numMut; q++)
         {
             varW = startVarW;
+            string tmpClause = "";
             for(t = 0; t <= numCell; t++)
             {
                 clauseHard.push_back(int2str(varW) + " " + int2str(var_y[t][q]));
                 clauseHard.push_back(int2str(varW) + " " + int2str(-1*var_y[t][p]));
+                tmpClause += int2str(-1*varW) + " ";
                 varW++;
-            }
-            string tmpClause = "";
-            for(int w = startVarW; w < varW; w++)
-            {
-                tmpClause += int2str(-1*w) + " ";
             }
             tmpClause += int2str(var_a[p][q]);
             clauseHard.push_back(tmpClause);
