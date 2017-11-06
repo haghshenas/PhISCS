@@ -343,6 +343,15 @@ void get_input_data(string path)
     }
     numCell = i;
     fin.close();
+    // artificial cell and mutation
+    for(j = 0; j < numMut; j++)
+    {
+        mat[numCell][j] = 0;
+    }
+    for(i = 0; i <= numCell; i++)
+    {
+        mat[i][numMut] = 1;
+    }
 }
 
 void set_y_variables()
@@ -350,9 +359,9 @@ void set_y_variables()
     int i, j;
     numVarY = 0;
 
-    for(i = 0; i < numCell; i++)
+    for(i = 0; i <= numCell; i++)
     {
-        for(j = 0; j < numMut; j++)
+        for(j = 0; j <= numMut; j++)
         {
             numVarY++;
             var_y[i][j] = numVarY;
@@ -366,9 +375,9 @@ void set_x_variables()
     int i, j;
     numVarX = 0;
 
-    for(i = 0; i < numCell; i++)
+    for(i = 0; i <= numCell; i++)
     {
-        for(j = 0; j < numMut; j++)
+        for(j = 0; j <= numMut; j++)
         {
             numVarX++;
             var_x[i][j] = startVarX + numVarX;
@@ -381,9 +390,9 @@ void set_b_variables()
     int i, j, p, q;
     numVarB = 0;
 
-    for(p = 0; p < numMut; p++)
+    for(p = 0; p <= numMut; p++)
     {
-        for(q = 0; q < numMut; q++)
+        for(q = 0; q <= numMut; q++)
         {
             for(i = 0; i < 2; i++)
             {
@@ -402,7 +411,7 @@ void set_k_variables()
     int p;
     numVarK = 0;
 
-    for(p = 0; p < numMut; p++)
+    for(p = 0; p <= numMut; p++)
     {
         numVarK++;
         var_k[p] = startVarK + numVarK;
@@ -414,9 +423,9 @@ void set_a_variables()
     int p, q;
     numVarA = 0;
 
-    for(p = 0; p < numMut; p++)
+    for(p = 0; p <= numMut; p++)
     {
-        for(q = 0; q < numMut; q++)
+        for(q = 0; q <= numMut; q++)
         {
             numVarA++;
             var_a[p][q] = startVarA + numVarA;  
@@ -545,23 +554,37 @@ void add_column_clauses_weight()
     {
         clauseSoft.push_back(str_colWeight + " " + int2str(-1*var_k[i]));
     }
+    // artificial mutation; cannot be removed
+    clauseHard.push_back(int2str(-1*var_k[numMut]));
 }
 
 void add_vaf_clauses()
 {
     int t, r;
     int p, q;
-    // 1.(a): ~a(p,q) v ~a(q,p)
+    // 1.(a)
+    // for all rows t, Y(t, germline) = 1
+    for(t = 0; t <= numCell; t++)
+    {
+        clauseHard.push_back(int2str(var_y[t][numMut]));
+    }
+    // 1.(b)
     for(p = 0; p < numMut; p++)
     {
-        for(q = 0; q < numMut; q++)
-        {
-            // for all pairs of mutations p and q (including p=q)
-            clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_a[q][p]));
-        }
+        clauseHard.push_back(int2str(-1*var_y[numCell][p]));   
     }
-    // 1.(b): (a(p,q) v a(q,p)) => (~K(p) ^ ~K(q))
-    //        (~K(p) v ~a(p,q)) ^ (~K(p) v ~a(q,p)) ^ (~a(p,q) v ~K(q)) ^ (~a(q,p) v ~K(q))
+    // // 2.(old): ~a(p,q) v ~a(q,p)
+    // for(p = 0; p < numMut; p++)
+    // {
+    //     for(q = 0; q < numMut; q++)
+    //     {
+    //         // for all pairs of mutations p and q (including p=q)
+    //         clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_a[q][p]));
+    //     }
+    // }
+    // 2.(a)
+    // (a(p,q) v a(q,p)) => (~K(p) ^ ~K(q))
+    // (~K(p) v ~a(p,q)) ^ (~K(p) v ~a(q,p)) ^ (~a(p,q) v ~K(q)) ^ (~a(q,p) v ~K(q))
     if(par_maxColRemove > 0) // FIXME: should I have this condition or not?
     {
         for(p = 0; p < numMut; p++)
@@ -575,23 +598,25 @@ void add_vaf_clauses()
             }
         }
     }
-    // 1.(c): (a(p,q) ^ Y(t, q)) => (a(p,q) ^ Y(t,p))
-    //        ~a(p,q) v ~Y(t, q) v ~Y(t,p)
-    for(t = 0; t < numCell; t++)
+    // 2.(b)
+    // (a(p,q) ^ Y(t, q)) => (a(p,q) ^ Y(t,p))
+    // ~a(p,q) v ~Y(t, q) v ~Y(t,p)
+    for(t = 0; t <= numCell; t++)
     {
-        for(p = 0; p < numMut; p++)
+        for(p = 0; p <= numMut; p++)
         {
-            for(q = 0; q < numMut; q++)
+            for(q = 0; q <= numMut; q++)
             {
                 clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_y[t][q]) + " " + int2str(-1*var_y[t][p]));
             }
         }
     }
-    // 1.(d): a(p,q) => vafP(p,q)
-    //        ~a(p,q) v vafP(p,q)
-    for(p = 0; p < numMut; p++)
+    // 2.(c)
+    // a(p,q) => vafP(p,q)
+    // ~a(p,q) v vafP(p,q)
+    for(p = 0; p <= numMut; p++)
     {
-        for(q = 0; q < numMut; q++)
+        for(q = 0; q <= numMut; q++)
         {
             if(vafP[p][q] == 0)
             {
@@ -599,13 +624,38 @@ void add_vaf_clauses()
             }
         }
     }
-    // 2.: (a(p,q) ^ a(p,r) ^ ~a(q,r) ^ ~a(r,q)) => vafT(p,q,r)
-    //     ~a(p,q) v ~a(p,r) v a(q,r) v a(r,q) v vafT(p,q,r)
-    for(p = 0; p < numMut; p++)
+    // 2.(d)
+    int startVarW = numVarY + numVarX + numVarB + numVarK + numVarA + 1;
+    int varW;
+    for(p = 0; p <= numMut; p++)
     {
-        for(q = 0; q < numMut; q++)
+        for(q = 0; q <= numMut; q++)
         {
-            for(r = 0; r < numMut; r++)
+            varW = startVarW;
+            for(t = 0; t <= numCell; t++)
+            {
+                clauseHard.push_back(int2str(varW) + " " + int2str(var_y[t][q]));
+                clauseHard.push_back(int2str(varW) + " " + int2str(-1*var_y[t][p]));
+                varW++;
+            }
+            string tmpClause = "";
+            for(int w = startVarW; w < varW; w++)
+            {
+                tmpClause += int2str(-1*w) + " ";
+            }
+            tmpClause += int2str(var_a[p][q]);
+            clauseHard.push_back(tmpClause);
+            startVarW += varW;
+        }
+    }
+    // 3.
+    // (a(p,q) ^ a(p,r) ^ ~a(q,r) ^ ~a(r,q)) => vafT(p,q,r)
+    // ~a(p,q) v ~a(p,r) v a(q,r) v a(r,q) v vafT(p,q,r)
+    for(p = 0; p <= numMut; p++)
+    {
+        for(q = 0; q <= numMut; q++)
+        {
+            for(r = 0; r <= numMut; r++)
             {
                 if(q < r) // FIXME: double check
                 {
@@ -842,10 +892,12 @@ void get_bulk_data(string path)
             vaf[p++] = str2double(line.substr(pos+8, line.find(';', pos) - (pos + 8)));
         }
     }
+    // artificial mutation; its VAF should be set to 1
+    vaf[numMut] = 1;
     // calc vafP
-    for(p = 0; p < numMut; p++)
+    for(p = 0; p <= numMut; p++)
     {
-        for(q = 0; q < numMut; q++)
+        for(q = 0; q <= numMut; q++)
         {
             if(vaf[p]*(1+par_delta) >= vaf[q])
             {
@@ -858,11 +910,11 @@ void get_bulk_data(string path)
         }
     }
     // calc vafT
-    for(p = 0; p < numMut; p++)
+    for(p = 0; p <= numMut; p++)
     {
-        for(q = 0; q < numMut; q++)
+        for(q = 0; q <= numMut; q++)
         {
-            for(r = 0; r < numMut; r++)
+            for(r = 0; r <= numMut; r++)
             {
                 if(vaf[p]*(1+par_delta) >= vaf[q] + vaf[r])
                 {
