@@ -47,7 +47,7 @@ double vaf[MAX_MUT];
 int vafP[MAX_MUT][MAX_MUT];
 int vafT[MAX_MUT][MAX_MUT][MAX_MUT];
 pair<int, int> map_y2ij[MAX_CELL * MAX_MUT + 10]; // maps Y variables to matrix position (row and column)
-pair<int, int> map_a2pq[10000]; // maps a variables to matrix position (row and column)
+// pair<int, int> map_a2pq[10000]; // maps a variables to matrix position (row and column)
 vector<string> clauseSoft; // the set of soft clauses for wcnf formulation
 vector<string> clauseHard; // the set of soft clauses for wcnf formulation
 
@@ -434,7 +434,7 @@ void set_a_variables()
         {
             numVarA++;
             var_a[p][q] = startVarA + numVarA;
-            map_a2pq[startVarA + numVarA] = make_pair<int, int>(p, q);
+            // map_a2pq[startVarA + numVarA] = make_pair<int, int>(p, q);
         }
     }
 }
@@ -617,7 +617,7 @@ void add_vaf_clauses()
 
     // 2.(b)
     // for a given mutation q != x, V_{for all p != q} a(p,q)
-    for(q = 0; q <= numMut; q++)
+    for(q = 0; q < numMut; q++)
     {
         string tmpClause = "";
         for(p = 0; p <= numMut; p++)
@@ -640,8 +640,6 @@ void add_vaf_clauses()
             for(q = 0; q <= numMut; q++)
             {
                 clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_y[t][q]) + " " + int2str(var_y[t][p]));
-                // if(mat[t][q] == 1 && mat[t][p] == 1)
-                //     clauseHard.push_back(int2str(-1*var_a[p][q]));
             }
         }
     }
@@ -667,22 +665,21 @@ void add_vaf_clauses()
     {
         for(q = 0; q <= numMut; q++)
         {
-            if(p != q)
+            // if(p != q) // FIXME: double check
             {
                 string tmpClause = "";
                 for(t = 0; t <= numCell; t++)
                 {
                     numVarW++;
                     clauseHard.push_back(int2str(startVarW+numVarW) + " " + int2str(var_y[t][q]));
-                    // if(mat[t][q] == 0)
-                    //     clauseHard.push_back(int2str(startVarW+numVarW));
                     clauseHard.push_back(int2str(startVarW+numVarW) + " " + int2str(-1*var_y[t][p]));
-                    // if(mat[t][p] == 1)
-                    //     clauseHard.push_back(int2str(startVarW+numVarW));
                     tmpClause += int2str(-1*(startVarW+numVarW)) + " ";
                 }
                 tmpClause += int2str(var_a[p][q]);
-                // tmpClause += int2str(var_a[p][q]) + " " + int2str(var_k[p]) + " " + int2str(var_k[q]);
+                if(par_maxColRemove > 0)
+                {
+                    tmpClause += " " + int2str(var_k[p]) + " " + int2str(var_k[q]);   
+                }
                 clauseHard.push_back(tmpClause);
                 // cout<< "new " << tmpClause << endl;
             }
@@ -864,12 +861,11 @@ bool read_maxsat_output_bitFlips(string path, int &flip, int &flip01, int &flip1
                         }
                     }
                 }
-                // output a variables
-                if(startVarA < tmpVarAbs && tmpVarAbs <= startVarA + numVarA) // it is a A variable
-                {
-                    // oldVal = mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second];
-                    cout<< "a(" << map_a2pq[tmpVarAbs].first << "," << map_a2pq[tmpVarAbs].second << ") = " << (tmpVar > 0 ? 1 : 0) << endl;
-                }
+                // // output a variables
+                // if(startVarA < tmpVarAbs && tmpVarAbs <= startVarA + numVarA) // it is a A variable
+                // {
+                //     cout<< "a(" << map_a2pq[tmpVarAbs].first << "," << map_a2pq[tmpVarAbs].second << ") = " << (tmpVar > 0 ? 1 : 0) << endl;
+                // }
             }
         }
     }
@@ -882,17 +878,20 @@ void write_output_matrix(string path, set<int> &removedCol)
     int i, j;
     ofstream fout(path.c_str());
     // header
-    for(i = 0; i < mutId.size(); i++)
+    // for(i = 0; i < mutId.size(); i++)
+    for(i = 0; i < mutId.size() - 1; i++)
     {
         if(removedCol.find(i-1) == removedCol.end()) // column not removed
             fout<< mutId[i] << "\t";
     }
     fout<< "\n";
     //content
-    for(i = 0; i <= numCell; i++)
+    // for(i = 0; i <= numCell; i++)
+    for(i = 0; i < numCell; i++)
     {
         fout<< cellId[i] << "\t";
-        for(j = 0; j <= numMut; j++)
+        // for(j = 0; j <= numMut; j++)
+        for(j = 0; j < numMut; j++)
         {
             if(removedCol.find(j) == removedCol.end()) // column not removed
                 fout<< mat[i][j] << "\t";
