@@ -72,7 +72,7 @@ mutations = matrix_input.shape[1]
 
 fn_weight = args.fnWeight
 fp_weight = args.fpWeight
-
+i = 0
 using_bulk = False
 if args.bulk:
     delta = args.delta
@@ -87,6 +87,9 @@ if args.bulk:
             else:
                 vaf = float(values[3]) / (float(values[4])+float(values[3]))
             bulk_mutations.append(vaf)
+            print(vaf)
+            mutation_names[i] += '_[' + str(int(200*vaf)) + ']'
+            i+=1
 
 # =========== VARIABLES
 model = Model('ILP')
@@ -229,31 +232,49 @@ if using_bulk:
         while q < mutations:
             c = 0
             while c < cells:
-                model.addConstr(C1[c,p,q] <= A[p, q])
-                model.addConstr(C1[c,p,q] <= matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p])
-                model.addConstr(C1[c,p,q] >= matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p] + A[p, q] - 1)
+                # model.addConstr(C1[c,p,q] <= (A[p,q]))
+                # model.addConstr(C1[c,p,q] <= matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p])
+                # model.addConstr(C1[c,p,q] >= matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p] + (A[p,q]) - 1)
+                #
+                # model.addConstr(C2[c,p,q] <= (A[p,q]))
+                # model.addConstr(C2[c,p,q] <= matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q])
+                # model.addConstr(C2[c,p,q] >= matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q] + (A[p,q]) - 1)
 
-                model.addConstr(C2[c,p,q] <= A[p, q])
-                model.addConstr(C2[c,p,q] <= matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q])
-                model.addConstr(C2[c,p,q] >= matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q] + A[p, q] - 1)
+                # model.addConstr(C1[c,p,q] >= C2[c,p,q])
 
-                model.addConstr(C1[c,p,q] >= C2[c,p,q])
+                model.addQConstr(
+                        matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q] <=
+                        (matrix_input[c, p] % 2 + F0[c, q] - F1[c, p] + X[c, p])*A[p, q] + (1 - A[p,q])
+                )
+
                 c += 1
 
-            model.addConstr(A[p, q] + A[q, p] <= 1)
-            model.addConstr(A[p, q] <= 1 - K[p])
-            model.addConstr(A[p, q] <= 1 - K[q])
+            model.addQConstr(
+                quicksum((matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q])*
+                         (1-(matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p]))
+                        for c in range(cells))
+                <= 1 - A[p,q]
+            )
 
-            model.addConstr(A[q, p] <= 1 - K[p])
-            model.addConstr(A[q, p] <= 1 - K[q])
+            model.addConstr((A[p,q]) + (A[q,p]) <= 1)
+            model.addConstr((A[p,q]) <= 1 - K[p])
+            model.addConstr((A[p,q]) <= 1 - K[q])
 
-            model.addConstr(A[p, q] * bulk_mutations[p] * (1 + delta)
-                            >= A[p, q] * bulk_mutations[q])
+            model.addConstr((A[q,p]) <= 1 - K[p])
+            model.addConstr((A[q,p]) <= 1 - K[q])
+
+            model.addConstr((A[p,q]) * bulk_mutations[p] * (1 + delta)
+                            >= (A[p,q]) * bulk_mutations[q])
+
+            # model.addConstr(quicksum(A[y,p] for y in range(mutations)) <=
+            #                 quicksum(A[x,q] for x in range(mutations)) +
+            #                 100000 * (A[p,q]))
+            # model.addConstr(0 <= quicksum(A[x,q] for x in range(mutations)) + 100000 * (1-A[p,q]))
 
             r = 0
             while r < mutations:
                 model.addConstr(bulk_mutations[p] * (1 + delta) >= bulk_mutations[q] * (
-                    A[p, q] - A[r, q] - A[q, r]) + bulk_mutations[r] * (A[p, r] - A[r, q] - A[q, r]))
+                    (A[p,q]) - (A[r,q]) - (A[q,r])) + bulk_mutations[r] * ((A[p,r]) - (A[r,q]) - (A[q,r])))
                 r += 1
 
             q += 1
@@ -455,7 +476,12 @@ log.write('MUTATIONS_REMOVED_INDEX: {0}\n'.format(
 
 log.close()
 
+# for i in range(mutations):
+#     for j in range(mutations):
+#         if int(A[i,j].X) == 1:
+#             print('%s - %s -> %s' %(mutation_names[i], mutation_names[j], str(int(A[i,j].X))))
+
 if tree:
     # Tree construction
     from tree import *
-    write_tree(sol_matrix, mutation_names, outfile)
+    write_tree(sol_matrix, solution_mutation_names, outfile)
