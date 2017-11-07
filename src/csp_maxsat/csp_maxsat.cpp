@@ -47,6 +47,7 @@ double vaf[MAX_MUT];
 int vafP[MAX_MUT][MAX_MUT];
 int vafT[MAX_MUT][MAX_MUT][MAX_MUT];
 pair<int, int> map_y2ij[MAX_CELL * MAX_MUT + 10]; // maps Y variables to matrix position (row and column)
+pair<int, int> map_a2pq[10000]; // maps a variables to matrix position (row and column)
 vector<string> clauseSoft; // the set of soft clauses for wcnf formulation
 vector<string> clauseHard; // the set of soft clauses for wcnf formulation
 
@@ -57,6 +58,7 @@ int numVarX = 0; // number of X variables
 int numVarB = 0; // number of B variables
 int numVarK = 0; // number of K variables
 int numVarA = 0; // number of A variables
+int numVarW = 0; // number of W variables
 int numZero = 0; // number of zeros in the input matrix
 int numOne = 0; // number of ones in the input matrix
 int numTwo = 0; // number of twos in the input matrix
@@ -66,6 +68,7 @@ int numTwo = 0; // number of twos in the input matrix
 #define startVarB (numVarY + numVarX)
 #define startVarK (numVarY + numVarX + numVarB)
 #define startVarA (numVarY + numVarX + numVarB + numVarK)
+#define startVarW (numVarY + numVarX + numVarB + numVarK + numVarA)
 
 string int2str(int n)
 {
@@ -344,6 +347,8 @@ void get_input_data(string path)
     numCell = i;
     fin.close();
     // artificial cell and mutation
+    mutId.push_back("mutX");
+    cellId.push_back("cellX");
     for(j = 0; j < numMut; j++)
     {
         mat[numCell][j] = 0;
@@ -428,7 +433,8 @@ void set_a_variables()
         for(q = 0; q <= numMut; q++)
         {
             numVarA++;
-            var_a[p][q] = startVarA + numVarA;  
+            var_a[p][q] = startVarA + numVarA;
+            map_a2pq[startVarA + numVarA] = make_pair<int, int>(p, q);
         }
     }
 }
@@ -554,25 +560,34 @@ void add_column_clauses_weight()
     {
         clauseSoft.push_back(str_colWeight + " " + int2str(-1*var_k[i]));
     }
-    // artificial mutation; cannot be removed
-    clauseHard.push_back(int2str(-1*var_k[numMut]));
 }
 
 void add_vaf_clauses()
 {
     int t, r;
     int p, q;
+
     // 1.(a)
-    // for all rows t, Y(t, germline) = 1
+    // ~K(numMut)
+    if(par_maxColRemove > 0)
+    {
+        clauseHard.push_back(int2str(-1*var_k[numMut]));   
+    }
+
+    // 1.(b)
+    // for all rows t, Y(t, numMut) = 1
     for(t = 0; t <= numCell; t++)
     {
         clauseHard.push_back(int2str(var_y[t][numMut]));
     }
-    // 1.(b)
+
+    // 1.(c)
+    // for all columns p != numMut, Y(numCell, p) = 0
     for(p = 0; p < numMut; p++)
     {
-        clauseHard.push_back(int2str(-1*var_y[numCell][p]));   
+        clauseHard.push_back(int2str(-1*var_y[numCell][p]));
     }
+
     // // 2.(old): ~a(p,q) v ~a(q,p)
     // for(p = 0; p < numMut; p++)
     // {
@@ -582,6 +597,7 @@ void add_vaf_clauses()
     //         clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_a[q][p]));
     //     }
     // }
+
     // 2.(a)
     // (a(p,q) v a(q,p)) => (~K(p) ^ ~K(q))
     // (~K(p) v ~a(p,q)) ^ (~K(p) v ~a(q,p)) ^ (~a(p,q) v ~K(q)) ^ (~a(q,p) v ~K(q))
@@ -598,20 +614,39 @@ void add_vaf_clauses()
             }
         }
     }
+
     // 2.(b)
+    // for a given mutation q != x, V_{for all p != q} a(p,q)
+    for(q = 0; q <= numMut; q++)
+    {
+        string tmpClause = "";
+        for(p = 0; p <= numMut; p++)
+        {
+            if(p != q)
+            {
+                tmpClause += int2str(var_a[p][q]) + " ";
+            }
+        }
+        clauseHard.push_back(tmpClause);
+    }
+
+    // 2.(c)
     // (a(p,q) ^ Y(t, q)) => (a(p,q) ^ Y(t,p))
-    // ~a(p,q) v ~Y(t, q) v ~Y(t,p)
+    // ~a(p,q) v ~Y(t, q) v Y(t,p)
     for(t = 0; t <= numCell; t++)
     {
         for(p = 0; p <= numMut; p++)
         {
             for(q = 0; q <= numMut; q++)
             {
-                clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_y[t][q]) + " " + int2str(-1*var_y[t][p]));
+                clauseHard.push_back(int2str(-1*var_a[p][q]) + " " + int2str(-1*var_y[t][q]) + " " + int2str(var_y[t][p]));
+                // if(mat[t][q] == 1 && mat[t][p] == 1)
+                //     clauseHard.push_back(int2str(-1*var_a[p][q]));
             }
         }
     }
-    // 2.(c)
+
+    // 2.(d)
     // a(p,q) => vafP(p,q)
     // ~a(p,q) v vafP(p,q)
     for(p = 0; p <= numMut; p++)
@@ -624,27 +659,36 @@ void add_vaf_clauses()
             }
         }
     }
-    // 2.(d)
-    int startVarW = numVarY + numVarX + numVarB + numVarK + numVarA + 1;
-    int varW;
+
+    // 2.(e)
+    // cout<< "from " << startVarW << endl;
+    numVarW = 0;
     for(p = 0; p <= numMut; p++)
     {
         for(q = 0; q <= numMut; q++)
         {
-            varW = startVarW;
-            string tmpClause = "";
-            for(t = 0; t <= numCell; t++)
+            if(p != q)
             {
-                clauseHard.push_back(int2str(varW) + " " + int2str(var_y[t][q]));
-                clauseHard.push_back(int2str(varW) + " " + int2str(-1*var_y[t][p]));
-                tmpClause += int2str(-1*varW) + " ";
-                varW++;
+                string tmpClause = "";
+                for(t = 0; t <= numCell; t++)
+                {
+                    numVarW++;
+                    clauseHard.push_back(int2str(startVarW+numVarW) + " " + int2str(var_y[t][q]));
+                    // if(mat[t][q] == 0)
+                    //     clauseHard.push_back(int2str(startVarW+numVarW));
+                    clauseHard.push_back(int2str(startVarW+numVarW) + " " + int2str(-1*var_y[t][p]));
+                    // if(mat[t][p] == 1)
+                    //     clauseHard.push_back(int2str(startVarW+numVarW));
+                    tmpClause += int2str(-1*(startVarW+numVarW)) + " ";
+                }
+                tmpClause += int2str(var_a[p][q]);
+                // tmpClause += int2str(var_a[p][q]) + " " + int2str(var_k[p]) + " " + int2str(var_k[q]);
+                clauseHard.push_back(tmpClause);
+                // cout<< "new " << tmpClause << endl;
             }
-            tmpClause += int2str(var_a[p][q]);
-            clauseHard.push_back(tmpClause);
-            startVarW += varW;
         }
     }
+
     // 3.
     // (a(p,q) ^ a(p,r) ^ ~a(q,r) ^ ~a(r,q)) => vafT(p,q,r)
     // ~a(p,q) v ~a(p,r) v a(q,r) v a(r,q) v vafT(p,q,r)
@@ -680,11 +724,11 @@ void write_maxsat_input(string path)
     //
     if(IS_PWCNF)
     {
-        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK + numVarA << " " << clauseSoft.size() + clauseHard.size() << " " << hardWeight << "\n";
+        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK + numVarA + numVarW << " " << clauseSoft.size() + clauseHard.size() << " " << hardWeight << "\n";
     }
     else
     {
-        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK + numVarA << " " << clauseSoft.size() + clauseHard.size() << "\n";
+        fout<< "p wcnf " << numVarY + numVarX + numVarB + numVarK + numVarA + numVarW << " " << clauseSoft.size() + clauseHard.size() << "\n";
     }
     // soft clauses
     for(i = 0; i < clauseSoft.size(); i++)
@@ -820,6 +864,12 @@ bool read_maxsat_output_bitFlips(string path, int &flip, int &flip01, int &flip1
                         }
                     }
                 }
+                // output a variables
+                if(startVarA < tmpVarAbs && tmpVarAbs <= startVarA + numVarA) // it is a A variable
+                {
+                    // oldVal = mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second];
+                    cout<< "a(" << map_a2pq[tmpVarAbs].first << "," << map_a2pq[tmpVarAbs].second << ") = " << (tmpVar > 0 ? 1 : 0) << endl;
+                }
             }
         }
     }
@@ -839,10 +889,10 @@ void write_output_matrix(string path, set<int> &removedCol)
     }
     fout<< "\n";
     //content
-    for(i = 0; i < numCell; i++)
+    for(i = 0; i <= numCell; i++)
     {
         fout<< cellId[i] << "\t";
-        for(j = 0; j < numMut; j++)
+        for(j = 0; j <= numMut; j++)
         {
             if(removedCol.find(j) == removedCol.end()) // column not removed
                 fout<< mat[i][j] << "\t";
@@ -1058,10 +1108,10 @@ int main(int argc, char *argv[])
 
     fLog.close();
 
-    if(remove((fileName + ".maxSAT.in").c_str()) != 0 )
-        cerr<< "Could not remove file:" << fileName + ".maxSAT.in" << endl;
-    if(remove((fileName + ".maxSAT.out").c_str()) != 0 )
-        cerr<< "Could not remove file:" << fileName + ".maxSAT.out" << endl;
+    // if(remove((fileName + ".maxSAT.in").c_str()) != 0 )
+    //     cerr<< "Could not remove file:" << fileName + ".maxSAT.in" << endl;
+    // if(remove((fileName + ".maxSAT.out").c_str()) != 0 )
+    //     cerr<< "Could not remove file:" << fileName + ".maxSAT.out" << endl;
 
     return EXIT_SUCCESS;
 }
