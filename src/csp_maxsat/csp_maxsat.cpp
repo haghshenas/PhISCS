@@ -1107,10 +1107,10 @@ int main(int argc, char *argv[])
 
     fLog.close();
 
-    // if(remove((fileName + ".maxSAT.in").c_str()) != 0 )
-    //     cerr<< "Could not remove file:" << fileName + ".maxSAT.in" << endl;
-    // if(remove((fileName + ".maxSAT.out").c_str()) != 0 )
-    //     cerr<< "Could not remove file:" << fileName + ".maxSAT.out" << endl;
+    if(remove((fileName + ".maxSAT.in").c_str()) != 0 )
+        cerr<< "Could not remove file:" << fileName + ".maxSAT.in" << endl;
+    if(remove((fileName + ".maxSAT.out").c_str()) != 0 )
+        cerr<< "Could not remove file:" << fileName + ".maxSAT.out" << endl;
 
     return EXIT_SUCCESS;
 }
