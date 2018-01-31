@@ -2,7 +2,7 @@
 
 ## Installation
 ```
-git clone https://github.com/haghshenas/tumorPhylogeny.git
-cd tumorPhylogeny
+git clone https://github.com/haghshenas/PhISCS.git
+cd PhISCS
 ./configure
 ```
