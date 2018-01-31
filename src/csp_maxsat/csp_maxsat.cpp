@@ -831,33 +831,45 @@ bool read_maxsat_output_bitFlips(string path, int &flip, int &flip01, int &flip1
                     {
                         if(tmpVar > 0)
                         {
-                            flip++;
-                            flip01++;
                             mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 1;
+                            if(map_y2ij[tmpVarAbs].first != numCell && map_y2ij[tmpVarAbs].second != numMut)
+                            {
+                                flip++;
+                                flip01++;
+                            }
                         }
                     }
                     else if(oldVal == 1)
                     {
                         if(tmpVar < 0)
                         {
-                            flip++;
-                            flip10++;
                             mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 0;
+                            if(map_y2ij[tmpVarAbs].first != numCell && map_y2ij[tmpVarAbs].second != numMut)
+                            {
+                                flip++;
+                                flip10++;
+                            }
                         }
                     }
                     else // oldVal == 2
                     {
                         if(tmpVar < 0)
                         {
-                            flip++;
-                            flip20++;
                             mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 0;
+                            if(map_y2ij[tmpVarAbs].first != numCell && map_y2ij[tmpVarAbs].second != numMut)
+                            {
+                                flip++;
+                                flip20++;
+                            }
                         }
                         else // tmpVar > 0
                         {
-                            flip++;
-                            flip21++;
                             mat[map_y2ij[tmpVarAbs].first][map_y2ij[tmpVarAbs].second] = 1;
+                            if(map_y2ij[tmpVarAbs].first != numCell && map_y2ij[tmpVarAbs].second != numMut)
+                            {
+                                flip++;
+                                flip21++;
+                            }
                         }
                     }
                 }
