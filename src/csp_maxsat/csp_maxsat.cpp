@@ -1109,7 +1109,7 @@ int main(int argc, char *argv[])
     {
         fLog<< mutId[(*it)+1] << (ii < removedCol.size() ? "," : "");
     }
-    fout<< "\n";
+    fLog << "\n";
 
     fLog.close();
 
