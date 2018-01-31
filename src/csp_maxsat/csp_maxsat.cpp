@@ -1104,6 +1104,12 @@ int main(int argc, char *argv[])
         fLog<< (*it)+1 << (ii < removedCol.size() ? "," : "");
     }
     fLog << "\n";
+    fLog<< "MUTATIONS_REMOVED_NAME: ";
+    for(ii = 1, it = removedCol.begin(); it != removedCol.end(); it++, ii++)
+    {
+        fLog<< mutId[(*it)+1] << (ii < removedCol.size() ? "," : "");
+    }
+    fout<< "\n";
 
     fLog.close();
 
