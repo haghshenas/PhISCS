@@ -951,7 +951,7 @@ void get_bulk_data(string path)
         }
     }
     // artificial mutation; its VAF should be set to 1
-    vaf[numMut] = 1;
+    vaf[numMut] = 5;
     // calc vafP
     for(p = 0; p <= numMut; p++)
     {
