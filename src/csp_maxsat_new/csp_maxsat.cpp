@@ -29,7 +29,8 @@ double  par_fnWeight_neg;
 double  par_fpRate = -1;
 double  par_fpWeight;
 double  par_fpWeight_neg;
-int     par_const = 1000;
+double  par_const = 1000000;
+double  par_precisionFactor = 1000;
 int     par_colWeight = -1;
 int     par_maxColRemove = 0;
 string  par_bulkFile = "";
@@ -38,7 +39,6 @@ string  par_maxSolver = "openwbo";
 int     par_threads = 1;
 bool    par_isTrueVAF = false;
 bool    IS_PWCNF = true;
-// bool    INT_WEIGHTS = true;
 bool    INT_WEIGHTS = false;
 string  MAXSAT_EXE;
 
@@ -185,7 +185,7 @@ void print_help()
         << "   -o, --outDir   STR        Output directory" << endl
         << endl
         << "Optional arguments:" << endl
-        << "   -c, --const    FLT        The constant for weights of soft clauses" << endl
+        << "   -c, --const    FLT        The constant for weights of soft clauses[1000000]" << endl
         // << "   -m, --maxMut   INT        Max number mutations to be eliminated [0]" << endl
         // << "   -b, --bulk     INT        Bulk sequencing file [\"\"]" << endl
         // << "   -e, --delta    FLT        Delta in VAF [0.01]" << endl
@@ -193,7 +193,9 @@ void print_help()
         << "   -s, --solver   STR        Name of MaxSAT solver. Available options are:" << endl
         << "                             qmaxsat/maxino/openwbo/aspino/mscg [\"openwbo\"]" << endl
         << "                             Note: for another solver, pass the path to binary" << endl
-        << "   -t, --threads  INT        Number of threads [1]" << endl
+        << "   -i, --integer             Round weights to their nearest integers [false]" << endl
+        << "   -z, --coefficient         The coefficient for rounding weights [1000]" << endl
+        // << "   -t, --threads  INT        Number of threads [1]" << endl
         << endl
         << "Other arguments:" << endl
         << "   -h, --help                Show this help message and exit" << endl;
@@ -216,13 +218,15 @@ bool command_line_parser(int argc, char *argv[])
         // {"delta",                  required_argument,  0,                  'e'},
         // {"vafTrue",                no_argument,        0,                  'v'},
         {"solver",                 required_argument,  0,                  's'},
+        {"integer",                required_argument,  0,                  'i'},
+        {"coefficient",            required_argument,  0,                  'z'},
         // {"threads",                required_argument,  0,                  't'},
         {"help",                   no_argument,        0,                  'h'},
         {0,0,0,0}
     };
 
     // while ( (c = getopt_long ( argc, argv, "f:n:p:o:m:b:e:s:t:vh", longOptions, &index))!= -1 )
-    while ( (c = getopt_long ( argc, argv, "f:n:p:o:c:s:h", longOptions, &index))!= -1 )
+    while ( (c = getopt_long ( argc, argv, "f:n:p:o:c:s:z:ih", longOptions, &index))!= -1 )
     {
         switch (c)
         {
@@ -250,9 +254,9 @@ bool command_line_parser(int argc, char *argv[])
                 break;
             case 'c':
                 par_const = str2int(optarg);
-                if(par_const < 1)
+                if(par_const <= 1)
                 {
-                    cerr<< "[ERROR] Constatn for weights should be an integer > 1" << endl;
+                    cerr<< "[ERROR] Constant for weights should be an integer > 1" << endl;
                     return false;
                 }
                 break;
@@ -280,6 +284,17 @@ bool command_line_parser(int argc, char *argv[])
             //     break;
             case 's':
                 par_maxSolver = optarg;
+                break;
+            case 'i':
+                INT_WEIGHTS = true;
+                break;
+            case 'z':
+                par_precisionFactor = str2int(optarg);
+                if(par_precisionFactor < 1)
+                {
+                    cerr<< "[ERROR] Rounding coefficient should be an integer >= 1" << endl;
+                    return false;
+                }
                 break;
             // case 't':
             //     par_threads = str2int(optarg);
@@ -322,6 +337,11 @@ bool command_line_parser(int argc, char *argv[])
         cerr<< "[ERROR] option -p/--fpRate is required" << endl;
         print_usage();
         return false;
+    }
+
+    if(INT_WEIGHTS == false)
+    {
+        par_precisionFactor = 1;
     }
 
     string exeDir = get_dir_path(get_exe_path());
@@ -1053,6 +1073,27 @@ void get_bulk_data(string path)
     }
 }
 
+bool is_conflict_free()
+{
+    for(int p = 0; p < numMut; p++)
+    {
+        for(int q = p + 1; q < numMut; q++)
+        {
+            bool seen11 = false;
+            bool seen01 = false;
+            bool seen10 = false;
+            for(int r = 0; r < numCell; r++)
+            {
+                if(mat[r][p] == 1 && mat[r][q] == 1) seen11 = true;
+                if(mat[r][p] == 0 && mat[r][q] == 1) seen01 = true;
+                if(mat[r][p] == 1 && mat[r][q] == 0) seen10 = true;
+            }
+            if(seen11 && seen01 && seen10) return false;
+        }
+    }
+    return true;
+}
+
 int main(int argc, char *argv[])
 {
     if(argc <= 1)
@@ -1073,12 +1114,10 @@ int main(int argc, char *argv[])
     // par_fpWeight_neg = round(log10(1 - pow(2, -1 * par_fpRate)) + log10(par_const));
 
     // calculate integer weights; log in base 10
-    // double cc = 1000;
-    double cc = 1;
-    par_fnWeight = cc * log(par_const * par_fnRate);
-    par_fnWeight_neg = cc * log(par_const * (1 - par_fnRate));
-    par_fpWeight = cc * log(par_const * par_fpRate);
-    par_fpWeight_neg = cc * log(par_const * (1 - par_fpRate));
+    par_fnWeight = par_precisionFactor * log(par_const * par_fnRate);
+    par_fnWeight_neg = par_precisionFactor * log(par_const * (1 - par_fnRate));
+    par_fpWeight = par_precisionFactor * log(par_const * par_fpRate);
+    par_fpWeight_neg = par_precisionFactor * log(par_const * (1 - par_fpRate));
 
     cout<< "par_fnWeight\t" << par_fnWeight << endl;
     cout<< "par_fnWeight_neg\t" << par_fnWeight_neg << endl;
@@ -1193,7 +1232,7 @@ int main(int argc, char *argv[])
     fLog<< "NUM_THREADS: " << par_threads << "\n";
     fLog<< "MODEL_SOLVING_TIME_SECONDS: " << maxsatTime << "\n";
     fLog<< "RUNNING_TIME_SECONDS: " << getRealTime() - realTime << "\n";
-    fLog<< "IS_CONFLICT_FREE: " << "YES" << "\n"; // FIXME: write the function
+    fLog<< "IS_CONFLICT_FREE: " << (is_conflict_free() ? "YES" : "NO") << "\n"; // FIXME: write the function
     fLog<< "TOTAL_FLIPS_REPORTED: " << numFlip01 + numFlip10 << "\n";
     fLog<< "0_1_FLIPS_REPORTED: " << numFlip01 << "\n";
     fLog<< "1_0_FLIPS_REPORTED: " << numFlip10 << "\n";
