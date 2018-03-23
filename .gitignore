@@ -1,5 +1,6 @@
 .DS_Store
 gurobi.log
 src/csp_maxsat/csp_maxsat
+src/csp_maxsat_new/csp_maxsat
 *.pyc
 experiment/results
