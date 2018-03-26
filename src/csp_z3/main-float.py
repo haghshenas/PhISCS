@@ -249,8 +249,8 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 
 
 def exe_command(file, time_out):
-	# command = str(os.path.dirname(os.path.realpath(__file__)))
-	command = './z3 '
+	command = str(os.path.dirname(os.path.realpath(__file__)))
+	command += '/z3 '
 	if time_out > 0:
 		command = command + '-t:' + str(time_out) + '000 '
 	command = command + '-smt2 ' + file + ' > ' + os.path.splitext(file)[0] + '.temp2'
@@ -341,7 +341,7 @@ if __name__ == '__main__':
 	noisy_data = read_data(inFile)
 	row = noisy_data.shape[0]
 	col = noisy_data.shape[1]
-	logFile = outDir + '/' + os.path.splitext(inFile.split('/')[-1])[0] + '.log'
+	logFile = outDir + '/' + os.path.splitext(inFile.split('/')[-1])[0] + '.Z3.log'
 	timeOut = 0
 
 	try:
@@ -378,7 +378,7 @@ if __name__ == '__main__':
 	total_model = datetime.now()-t1
 
 	output_data, col_el, obj = read_ouput(row, col, os.path.splitext(logFile)[0] + '.temp2', allow_col_elim)
-	output_mat = write_output(output_data, os.path.splitext(logFile)[0] + '.output', col_el)
+	output_mat = write_output(output_data, os.path.splitext(logFile)[0] + '.Z3.conflictFreeMatrix', col_el)
 	command = 'rm ' + os.path.splitext(logFile)[0]+'.temp1'
 	os.system(command)
 	command = 'rm ' + os.path.splitext(logFile)[0]+'.temp2'
@@ -390,7 +390,6 @@ if __name__ == '__main__':
 	log.write('NUM_MUTATIONS(COLUMNS): '+str(col)+'\n')
 	log.write('FN_WEIGHT: '+str(fn_weight)+'\n')
 	log.write('FP_WEIGHT: '+str(fp_weight)+'\n')
-	log.write('w_WEIGHT: '+str(w_weight)+'\n')
 	log.write('NUM_THREADS: '+str(1)+'\n')
 	log.write('MODEL_SOLVING_TIME_SECONDS: '+str('{0:.3f}'.format(total_model.total_seconds()))+'\n')
 	log.write('RUNNING_TIME_SECONDS: '+str('{0:.3f}'.format(total_running.total_seconds()))+'\n')
@@ -404,9 +403,12 @@ if __name__ == '__main__':
 	log.write('1_0_FLIPS_REPORTED: '+str(b)+'\n')
 	log.write('2_0_FLIPS_REPORTED: '+str(c)+'\n')
 	log.write('2_1_FLIPS_REPORTED: '+str(d)+'\n')
+	log.write('COL_WEIGHT: '+str(w_weight)+'\n')
 	log.write('MUTATIONS_REMOVED_UPPER_BOUND: '+str(maxCol)+'\n')
 	log.write('MUTATIONS_REMOVED_NUM: '+str(len(col_el))+'\n')
 	temp = 'MUTATIONS_REMOVED_INDEX: '+ ',' . join([str(i) for i in sorted(col_el)])
+	# 'MUTATIONS_REMOVED_NAME'
 	log.write(temp+'\n')
-	log.write('OBJ VALUE: '+ str(whole_obj+costant_obj-obj)+'\n')
+	log.write('LIKELIHOOD: '+ str(whole_obj+costant_obj-obj)+'\n')
+	log.close()
 	
