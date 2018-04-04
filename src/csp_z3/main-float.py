@@ -4,6 +4,7 @@ from datetime import datetime
 from itertools import *
 import argparse
 import os, sys, errno
+from utils import *
 
 def read_data(file):
 	df = pd.read_table(file)
@@ -124,14 +125,6 @@ def produce_input(fstr, data, numCells, numMuts, allow_col_elim, fn_weight, fp_w
 	costant_obj = 0.0
 	whole_obj = 0.0
 	file = open(fstr, 'w')
-	#file.write('(check-sat-using smt :random-seed 1)\n')
-	# file.write('(set-option :opt.wmaxsat_engine wpm2)\n')
-	# file.write('(set-option :smt.arith.solver 3)\n')
-	#file.write('(apply qflia)')
-	#file.write('(check-sat-using simplify)\n')
-	#file.write('(check-sat-using qflia)\n')
-	#file.write('(check-sat-using (with sat :phase always-false))\n')
-	#file.write('(check-sat-using (then simplify (with sat))\n')
 	file.write('(check-sat-using sat)\n')
 	for i in range(numCells):
 		for j in range(numMuts):
@@ -253,6 +246,7 @@ def exe_command(file, time_out):
 	command += '/z3 '
 	if time_out > 0:
 		command = command + '-t:' + str(time_out) + '000 '
+		# command = command + '-T:' + str(time_out) + ' '
 	command = command + '-smt2 ' + file + ' > ' + os.path.splitext(file)[0] + '.temp2'
 	os.system(command)
 
@@ -294,8 +288,11 @@ def read_ouput(n, m, fstr, allow_col_elim):
 					outresult[i][j] = 0
 		if 'objectives' in line:
 			next_line = lines[index+1]
-			a = float(next_line.split(' ')[4])
-			b = float(next_line.split(' ')[5].replace(')))\n',''))
+			try:
+				a = float(next_line.split(' ')[4])
+				b = float(next_line.split(' ')[5].replace(')))\n',''))
+			except:
+				pass
 			
 
 	return outresult, col_el, -1*a/b
@@ -331,6 +328,9 @@ if __name__ == '__main__':
 	parser.add_argument('-e', '--delta', default = 0.1,
 						type = float,
 						help = 'Delta in VAF [0.1]')
+	parser.add_argument('-T', '--timeout', default = 0,
+						type = int,
+						help = 'Timeout in seconds [0]')
 	args = parser.parse_args()
 
 	inFile = args.file
@@ -342,7 +342,10 @@ if __name__ == '__main__':
 	row = noisy_data.shape[0]
 	col = noisy_data.shape[1]
 	logFile = outDir + '/' + os.path.splitext(inFile.split('/')[-1])[0] + '.Z3.log'
-	timeOut = 0
+	if args.timeout is not None:
+		timeOut = args.timeout
+	else:
+		timeOut = 0
 
 	try:
 		os.makedirs(outDir)
@@ -409,6 +412,9 @@ if __name__ == '__main__':
 	temp = 'MUTATIONS_REMOVED_INDEX: '+ ',' . join([str(i) for i in sorted(col_el)])
 	# 'MUTATIONS_REMOVED_NAME'
 	log.write(temp+'\n')
-	log.write('LIKELIHOOD: '+ str(whole_obj+costant_obj-obj)+'\n')
+	# log.write('LIKELIHOOD: '+ str(whole_obj+costant_obj-obj)+'\n')
+	i = inFile
+	o = os.path.splitext(logFile)[0] + '.Z3.conflictFreeMatrix'
+	log.write('LIKELIHOOD: '+ str(get_liklihood(i, o, fn_weight, fp_weight))+'\n')
 	log.close()
 	
