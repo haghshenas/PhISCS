@@ -1,0 +1,17 @@
+ID	Chromosome	Position	MutantCount	ReferenceCount	INFO
+mut0		10	117154148	108	1892	geneID=ATRNL1;mutNuc=A;refNuc=C;publicationVAF=0.11;
+mut1		11	27698664	298	1702	geneID=BDNF-AS;mutNuc=A;refNuc=T;publicationVAF=0.30;
+mut2		6	118822648	236	1764	geneID=BRD7P3;mutNuc=A;refNuc=T;publicationVAF=0.24;
+mut3		3	32280281	416	1584	geneID=CMTM8;mutNuc=T;refNuc=C;publicationVAF=0.42;
+mut4		5	14612901	437	1563	geneID=FAM105A;mutNuc=A;refNuc=G;publicationVAF=0.44;
+mut5		12	32793457	290	1710	geneID=FGD4;mutNuc=A;refNuc=C;publicationVAF=0.29;
+mut6		2	220440226	204	1796	geneID=INHA;mutNuc=T;refNuc=C;publicationVAF=0.20;
+mut7		15	88122589	100	1900	geneID=LINC00052;mutNuc=T;refNuc=G;publicationVAF=0.10;
+mut8		4	31148165	294	1706	geneID=PCDH7;mutNuc=T;refNuc=C;publicationVAF=0.29;
+mut9		8	144995042	974	1026	geneID=PLEC;mutNuc=A;refNuc=C;publicationVAF=0.97;
+mut10		8	105025789	942	1058	geneID=RIMS2;mutNuc=G;refNuc=T;publicationVAF=0.94;
+mut11		11	6622747	222	1778	geneID=RRP8;mutNuc=G;refNuc=T;publicationVAF=0.22;
+mut12		19	51917709	934	1066	geneID=SIGLEC10;mutNuc=A;refNuc=G;publicationVAF=0.93;
+mut13		7	98575882	80	1920	geneID=TRRAP;mutNuc=A;refNuc=G;publicationVAF=0.08;
+mut14		8	21827088	264	1736	geneID=XPO7;mutNuc=A;refNuc=G;publicationVAF=0.26;
+mut15		8	144550709	264	1736	geneID=ZC3H3;mutNuc=A;refNuc=G;publicationVAF=0.26;
