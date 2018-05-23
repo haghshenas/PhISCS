@@ -84,7 +84,7 @@ if args.bulk:
     with open(args.bulk, 'r') as bulkfile:
         bulkfile.readline()
         for line in bulkfile:
-            values = line.split('\t')
+            values = line.split()
             if args.truevaf:
                 vaf = float(values[5].split(';')[1].split('=')[1])
             else:
@@ -252,32 +252,60 @@ if using_bulk:
         q = 0
         while q < mutations:
             c = 0
+
+            quadratic_sum = 0
+
             while c < cells:
+                Ytp = matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p]
+                Ytq = matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q]
+
+                # Constraint 1.b.1
+                model.addConstr(C1[c,p,q] <= Ytp)
                 model.addConstr(C1[c,p,q] <= A[p, q])
-                model.addConstr(C1[c,p,q] <= matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p])
-                model.addConstr(C1[c,p,q] >= matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p] + A[p, q] - 1)
+                model.addConstr(C1[c,p,q] >= Ytp + A[p, q] -1)
 
-                model.addConstr(C2[c,p,q] <= A[p, q])
-                model.addConstr(C2[c,p,q] <= matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q])
-                model.addConstr(C2[c,p,q] >= matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q] + A[p, q] - 1)
+                model.addConstr(Ytq <= C1[c,p,q] + (1- A[p, q]))
 
-                model.addConstr(C1[c,p,q] >= C2[c,p,q])
+
+                # Constraint 1.b.2 part1
+                model.addConstr(C2[c,p,q] <= Ytq)
+                model.addConstr(C2[c,p,q] <= 1-Ytp)
+                model.addConstr(C2[c,p,q] >= Ytq + (1-Ytp) -1)
+
+                quadratic_sum += C2[c,p,q]
+                
                 c += 1
+            
+            # Constraint 1.b.2 part2
+            model.addConstr(quadratic_sum >= 1- A[p,q])
 
-            model.addConstr(A[p, q] + A[q, p] <= 1)
+            # model.addConstr(A[p, q] + A[q, p] <= 1)
+
+            # Constraints 1.a
             model.addConstr(A[p, q] <= 1 - K[p])
             model.addConstr(A[p, q] <= 1 - K[q])
 
             model.addConstr(A[q, p] <= 1 - K[p])
             model.addConstr(A[q, p] <= 1 - K[q])
 
+            # Constraint 1.c
             model.addConstr(A[p, q] * bulk_mutations[p] * (1 + delta)
                             >= A[p, q] * bulk_mutations[q])
 
             r = 0
             while r < mutations:
-                model.addConstr(bulk_mutations[p] * (1 + delta) >= bulk_mutations[q] * (
-                    A[p, q] - A[r, q] - A[q, r]) + bulk_mutations[r] * (A[p, r] - A[r, q] - A[q, r]))
+                # Constraint 2
+                model.addConstr(
+                    bulk_mutations[p] * (1 + delta) >= 
+                    bulk_mutations[q] * (A[p, q] - A[r, q] - A[q, r]) + 
+                    bulk_mutations[r] * (A[p, r] - A[r, q] - A[q, r])
+                )
+
+                # Constraint 1.d
+                model.addConstr(
+                    A[p, r] >= A[p, q] + A[q, r] - 1
+                )
+                
                 r += 1
 
             q += 1
@@ -474,8 +502,7 @@ log.write('2_0_FLIPS_REPORTED: {0}\n'.format(
     str(sol_20_tot)))
 log.write('2_1_FLIPS_REPORTED: {0}\n'.format(
     str(sol_21_tot)))
-log.write('MUTATIONS_REMOVED_UPPER_BOUND: {0}\n'.format(
-    str(args.maxMut)))
+log.write('MUTATIONS_REMOVED_UPPER_BOUND: {0}\n'.format(str(args.maxMut)))
 log.write('MUTATIONS_REMOVED_NUM: {0}\n'. format(
     str(sum(removed_cols))))
 log.write('MUTATIONS_REMOVED_INDEX: {0}\n'.format(
