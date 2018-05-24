@@ -277,7 +277,7 @@ if using_bulk:
                 c += 1
             
             # Constraint 1.b.2 part2
-            model.addConstr(quadratic_sum >= 1- A[p,q])
+            model.addConstr(quadratic_sum >= 1- A[p,q] - K[p] - K[q])
 
             # model.addConstr(A[p, q] + A[q, p] <= 1)
 
