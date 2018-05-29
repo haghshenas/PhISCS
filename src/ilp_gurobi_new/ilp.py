@@ -344,8 +344,8 @@ while c < cells:
     row = []
     while m < mutations:
         if not isinstance(F0[c, m], int):
-            row.append(int(F0[c, m].X))
-            flip0_sol_tot += int(F0[c, m].X)
+            row.append(int(round((F0[c, m].X)))
+            flip0_sol_tot += int(round(F0[c, m].X))
         else:
             row.append(0)
         m += 1
@@ -367,8 +367,8 @@ while c < cells:
     row = []
     while m < mutations:
         if not isinstance(F1[c, m], int):
-            row.append(int(F1[c, m].X))
-            flip1_sol_tot += int(F1[c, m].X)
+            row.append(int(round(F1[c, m].X)))
+            flip1_sol_tot += int(round(F1[c, m].X))
         else:
             row.append(0)
         m += 1
@@ -429,12 +429,12 @@ while c < cells:
         if int(K[m].X) == 0:
             # print(int(X[c, m].X))
             if matrix_input[c, m] == 0:
-                row.append(int(F0[c, m].X))
+                row.append(int(round((F0[c, m].X)))
             elif matrix_input[c, m] == 1:
-                row.append(1 - int(F1[c, m].X))
+                row.append(1 - int(round((F1[c, m].X)))
             else:
-                row.append(int(X[c, m].X))
-                if int(X[c, m].X) == 0:
+                row.append(int(round((X[c, m].X)))
+                if int(round(X[c, m].X)) == 0:
                     sol_20_tot += 1
                 else:
                     sol_21_tot += 1
