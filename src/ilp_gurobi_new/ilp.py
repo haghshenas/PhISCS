@@ -259,27 +259,34 @@ if using_bulk:
                 Ytp = matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p]
                 Ytq = matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q]
 
-                # Constraint 1.b.1
+                # # Constraint 1.b.1
+                # model.addConstr(C1[c,p,q] <= Ytp)
+                # model.addConstr(C1[c,p,q] <= A[p, q])
+                # model.addConstr(C1[c,p,q] >= Ytp + A[p, q] -1)
+
+                # model.addConstr(Ytq <= C1[c,p,q] + (1- A[p, q]))
+
+
+                # # Constraint 1.b.2 part1
+                # model.addConstr(C2[c,p,q] <= Ytq)
+                # model.addConstr(C2[c,p,q] <= 1-Ytp)
+                # model.addConstr(C2[c,p,q] >= Ytq + (1-Ytp) -1)
+
+                # quadratic_sum += C2[c,p,q]
+
+                # New Constraint 1.b
                 model.addConstr(C1[c,p,q] <= Ytp)
                 model.addConstr(C1[c,p,q] <= A[p, q])
                 model.addConstr(C1[c,p,q] >= Ytp + A[p, q] -1)
 
                 model.addConstr(Ytq <= C1[c,p,q] + (1- A[p, q]))
-
-
-                # Constraint 1.b.2 part1
-                model.addConstr(C2[c,p,q] <= Ytq)
-                model.addConstr(C2[c,p,q] <= 1-Ytp)
-                model.addConstr(C2[c,p,q] >= Ytq + (1-Ytp) -1)
-
-                quadratic_sum += C2[c,p,q]
                 
                 c += 1
             
-            # Constraint 1.b.2 part2
-            model.addConstr(quadratic_sum >= 1- A[p,q] - K[p] - K[q])
+            # # Constraint 1.b.2 part2
+            # model.addConstr(quadratic_sum >= 1- A[p,q] - K[p] - K[q])
 
-            # model.addConstr(A[p, q] + A[q, p] <= 1)
+            # # model.addConstr(A[p, q] + A[q, p] <= 1)
 
             # Constraints 1.a
             model.addConstr(A[p, q] <= 1 - K[p])
