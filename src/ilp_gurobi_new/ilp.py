@@ -51,6 +51,18 @@ parser.add_argument('-T', '--time', action='store', type=int, default=1e100,
 
 args = parser.parse_args()
 
+try:
+    os.makedirs(args.outDir)
+except OSError as exc:
+    if exc.errno == errno.EEXIST and os.path.isdir(args.outDir):
+        pass
+    else:
+        raise
+
+filename = os.path.splitext(os.path.basename(args.file))[0]
+outfile = os.path.join(args.outDir, filename)
+gurobi_log = '{0}.ILP.gurobiSolverLog'.format(outfile)
+
 # ======== INPUT PROCESSING FOR DATA:
 start_model = datetime.now()
 DELIMITER = '\t'
@@ -94,7 +106,7 @@ if args.bulk:
 # =========== VARIABLES
 model = Model('ILP')
 model.Params.Threads = args.threads
-model.Params.LogFile = ""
+model.Params.LogFile = gurobi_log
 model.setParam('TimeLimit', args.time)
 
 print('Generating variables...')
@@ -385,14 +397,6 @@ while c < cells:
     c += 1
 
 flip1_matrix = np.array(flip1_matrix)
-
-try:
-    os.makedirs(args.outDir)
-except OSError as exc:
-    if exc.errno == errno.EEXIST and os.path.isdir(args.outDir):
-        pass
-    else:
-        raise
 
 filename = os.path.splitext(os.path.basename(args.file))[0]
 outfile = os.path.join(args.outDir, filename)
