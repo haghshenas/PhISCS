@@ -473,6 +473,7 @@ log.write('MODEL_SOLVING_TIME_SECONDS: {0:.3f}\n'.format(time_to_opt.total_secon
 log.write('RUNNING_TIME_SECONDS: {0:.3f}\n'.format(time_to_run.total_seconds()))
 
 
+
 # --- DOUBLE-CHECK PP
 conflict_free = True
 for p in range(sol_matrix.shape[1]):
@@ -499,6 +500,7 @@ else:
 
 log.write('IS_CONFLICT_FREE: {0}\n'.format(conflict_free))
 log.write('LIKELIHOOD: {0}\n'.format(str(optimal_solution)))
+log.write('MIP gap value: %f\n' % model.MIPGap)
 log.write('TOTAL_FLIPS_REPORTED: {0}\n'.format(
     str(flip0_sol_tot + flip1_sol_tot)))
 log.write('0_1_FLIPS_REPORTED: {0}\n'.format(
@@ -516,8 +518,3 @@ log.write('MUTATIONS_REMOVED_INDEX: {0}\n'.format(
     ','.join(removed_mutation_indeces)))
 
 log.close()
-
-if tree:
-    # Tree construction
-    from tree import *
-    write_tree(sol_matrix, mutation_names, outfile)
