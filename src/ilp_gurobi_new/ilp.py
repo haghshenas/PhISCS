@@ -504,7 +504,7 @@ else:
 
 log.write('IS_CONFLICT_FREE: {0}\n'.format(conflict_free))
 log.write('LIKELIHOOD: {0}\n'.format(str(optimal_solution)))
-log.write('MIP gap value: %f\n' % model.MIPGap)
+log.write('MIP_Gap_Value: %f\n' % model.MIPGap)
 log.write('TOTAL_FLIPS_REPORTED: {0}\n'.format(
     str(flip0_sol_tot + flip1_sol_tot)))
 log.write('0_1_FLIPS_REPORTED: {0}\n'.format(
