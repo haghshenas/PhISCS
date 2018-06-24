@@ -1,0 +1,57 @@
+
+Gurobi 7.5.2 (linux64) logging started Sat Jun 23 18:04:32 2018
+
+Changed value of parameter LogFile to result/ilp/simNo_9-n_100-m_40-s_10-minVAF_0.05-cov_10000-k_1-fn_0.10-fp_0.0001-na_0.15.ILP.gurobiSolverLog
+   Prev: gurobi.log  Default: 
+Changed value of parameter TimeLimit to 86400.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 1265601 rows, 330440 columns and 3489120 nonzeros
+Variable types: 0 continuous, 330440 integer (330440 binary)
+Coefficient statistics:
+  Matrix range     [2e-04, 3e+00]
+  Objective range  [2e+00, 9e+00]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [6e-02, 2e+00]
+Found heuristic solution: objective -6401.426153
+Presolve removed 403931 rows and 231527 columns (presolve time = 5s) ...
+Presolve removed 417107 rows and 231527 columns (presolve time = 10s) ...
+Presolve removed 417960 rows and 231527 columns (presolve time = 15s) ...
+Presolve removed 417960 rows and 231527 columns (presolve time = 21s) ...
+Presolve removed 417960 rows and 231527 columns (presolve time = 25s) ...
+Presolve removed 417960 rows and 231527 columns (presolve time = 32s) ...
+Presolve removed 417960 rows and 231527 columns
+Presolve time: 34.44s
+Presolved: 847641 rows, 98913 columns, 2364367 nonzeros
+Variable types: 0 continuous, 98913 integer (98913 binary)
+Presolved: 98913 rows, 946554 columns, 2463280 nonzeros
+
+Presolve removed 98913 rows and 946554 columns
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    8.2994508e+00   0.000000e+00   4.919000e+04     45s
+    3853   -4.8863704e+01   0.000000e+00   1.183850e+04     45s
+    5737   -9.1526298e+01   0.000000e+00   0.000000e+00     46s
+    5737   -9.1526298e+01   0.000000e+00   0.000000e+00     49s
+
+Root relaxation: objective -9.152630e+01, 5737 iterations, 11.60 seconds
+Total elapsed time = 59.90s
+Total elapsed time = 65.32s
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0  -91.52630    0   15 -6401.4262  -91.52630  98.6%     -   71s
+H    0     0                     -94.9967500  -91.52630  3.65%     -   72s
+H    0     0                     -92.6831151  -91.52630  1.25%     -   73s
+     0     0     cutoff    0       -92.68312  -92.68312  0.00%     -   80s
+     0     0     cutoff    0       -92.68312  -92.68312  0.00%     -   80s
+
+Explored 1 nodes (11246 simplex iterations) in 80.95 seconds
+Thread count was 1 (of 80 available processors)
+
+Solution count 3: -92.6831 -94.9968 -6401.43 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -9.268311509275e+01, best bound -9.268311509275e+01, gap 0.0000%
