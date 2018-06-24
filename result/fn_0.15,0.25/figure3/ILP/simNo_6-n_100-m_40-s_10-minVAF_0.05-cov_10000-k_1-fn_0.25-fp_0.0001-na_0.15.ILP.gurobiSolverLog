@@ -1,0 +1,65 @@
+
+Gurobi 7.5.2 (linux64) logging started Sat Jun 23 16:30:01 2018
+
+Changed value of parameter LogFile to result/ilp/simNo_6-n_100-m_40-s_10-minVAF_0.05-cov_10000-k_1-fn_0.25-fp_0.0001-na_0.15.ILP.gurobiSolverLog
+   Prev: gurobi.log  Default: 
+Changed value of parameter TimeLimit to 86400.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 1265601 rows, 330440 columns and 3489120 nonzeros
+Variable types: 0 continuous, 330440 integer (330440 binary)
+Coefficient statistics:
+  Matrix range     [6e-04, 4e+00]
+  Objective range  [1e+00, 2e+01]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [6e-02, 2e+00]
+Found heuristic solution: objective -9858.817779
+Presolve removed 414764 rows and 230315 columns (presolve time = 5s) ...
+Presolve removed 415052 rows and 230315 columns (presolve time = 10s) ...
+Presolve removed 415799 rows and 230315 columns (presolve time = 15s) ...
+Presolve removed 415799 rows and 230315 columns (presolve time = 20s) ...
+Presolve removed 415799 rows and 230315 columns (presolve time = 26s) ...
+Presolve removed 415799 rows and 230315 columns (presolve time = 30s) ...
+Presolve removed 415799 rows and 230315 columns (presolve time = 38s) ...
+Presolve removed 415799 rows and 230315 columns (presolve time = 40s) ...
+Presolve removed 415799 rows and 230315 columns
+Presolve time: 40.06s
+Presolved: 849802 rows, 100125 columns, 2368483 nonzeros
+Variable types: 0 continuous, 100125 integer (100125 binary)
+Presolved: 100125 rows, 949927 columns, 2468608 nonzeros
+
+Presolve removed 100125 rows and 949927 columns
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.4511880e+01   0.000000e+00   7.153800e+04     50s
+    6477   -1.5168965e+02   0.000000e+00   1.050478e+05     50s
+   18759   -2.0824399e+02   0.000000e+00   1.982926e+05     55s
+   31575   -2.4157399e+02   0.000000e+00   5.184613e+04     60s
+   43857   -2.7373368e+02   0.000000e+00   1.057292e+05     65s
+   55605   -2.8880507e+02   0.000000e+00   1.581692e+03     70s
+   59211   -2.9024782e+02   0.000000e+00   0.000000e+00     73s
+   59211   -2.9024782e+02   0.000000e+00   0.000000e+00     75s
+
+Root relaxation: objective -2.902478e+02, 59211 iterations, 32.02 seconds
+Total elapsed time = 99.94s
+Total elapsed time = 106.49s
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 -290.24782    0 1406 -9858.8178 -290.24782  97.1%     -  112s
+H    0     0                    -291.1712478 -290.24782  0.32%     -  140s
+     0     0     cutoff    0      -291.17125 -291.17125  0.00%     -  160s
+
+Cutting planes:
+  Gomory: 2
+  Zero half: 5
+
+Explored 1 nodes (65430 simplex iterations) in 160.71 seconds
+Thread count was 1 (of 80 available processors)
+
+Solution count 2: -291.171 -9858.82 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -2.911712477768e+02, best bound -2.911712477768e+02, gap 0.0000%

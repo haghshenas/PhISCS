@@ -1,0 +1,78 @@
+
+Gurobi 7.5.2 (linux64) logging started Sat Jun 23 16:25:59 2018
+
+Changed value of parameter LogFile to result/ilp/simNo_3-n_100-m_40-s_7-minVAF_0.05-cov_2000-k_1-fn_0.15-fp_0.0001-na_0.15.ILP.gurobiSolverLog
+   Prev: gurobi.log  Default: 
+Changed value of parameter TimeLimit to 86400.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 1265601 rows, 330440 columns and 3489120 nonzeros
+Variable types: 0 continuous, 330440 integer (330440 binary)
+Coefficient statistics:
+  Matrix range     [6e-04, 3e+00]
+  Objective range  [2e+00, 1e+01]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [6e-02, 2e+00]
+Found heuristic solution: objective -9124.289568
+Presolve removed 397487 rows and 227184 columns (presolve time = 5s) ...
+Presolve removed 397932 rows and 227184 columns (presolve time = 10s) ...
+Presolve removed 398615 rows and 227184 columns (presolve time = 15s) ...
+Presolve removed 398615 rows and 227184 columns (presolve time = 20s) ...
+Presolve removed 398615 rows and 227184 columns (presolve time = 25s) ...
+Presolve removed 398615 rows and 227184 columns (presolve time = 31s) ...
+Presolve removed 398615 rows and 227184 columns
+Presolve time: 34.73s
+Presolved: 866986 rows, 103256 columns, 2414410 nonzeros
+Variable types: 0 continuous, 103256 integer (103256 binary)
+Presolve removed 0 rows and 0 columns (presolve time = 5s) ...
+Presolved: 103256 rows, 970242 columns, 2517666 nonzeros
+
+Presolve removed 103256 rows and 970242 columns
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.3316644e+01   0.000000e+00   6.412200e+04     50s
+    5229   -9.3929966e+01   0.000000e+00   2.189700e+04     50s
+   13374   -1.8242495e+02   0.000000e+00   4.009688e+04     55s
+   17726   -2.0777511e+02   0.000000e+00   0.000000e+00     58s
+   17726   -2.0777511e+02   0.000000e+00   0.000000e+00     62s
+
+Root relaxation: objective -2.077751e+02, 17726 iterations, 24.10 seconds
+Total elapsed time = 92.62s
+Total elapsed time = 102.82s
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 -207.77511    0  273 -9124.2896 -207.77511  97.7%     -  119s
+H    0     0                    -217.6125665 -207.77511  4.52%     -  130s
+     0     0 -209.62791    0  124 -217.61257 -209.62791  3.67%     -  145s
+H    0     0                    -214.0638310 -209.62791  2.07%     -  154s
+     0     0 -210.81082    0  130 -214.06383 -210.81082  1.52%     -  167s
+     0     0 -211.40228    0  101 -214.06383 -211.40228  1.24%     -  182s
+     0     0 -211.40228    0   99 -214.06383 -211.40228  1.24%     -  195s
+     0     0 -211.40228    0   53 -214.06383 -211.40228  1.24%     -  225s
+     0     0 -211.40228    0  160 -214.06383 -211.40228  1.24%     -  289s
+     0     0 -211.40228    0   75 -214.06383 -211.40228  1.24%     -  290s
+     0     0 -211.40228    0   39 -214.06383 -211.40228  1.24%     -  291s
+     0     0 -212.28946    0   34 -214.06383 -212.28946  0.83%     -  293s
+     0     0 -212.28946    0  115 -214.06383 -212.28946  0.83%     -  297s
+     0     0 -212.28946    0   62 -214.06383 -212.28946  0.83%     -  298s
+     0     0 -212.28946    0   61 -214.06383 -212.28946  0.83%     -  298s
+     0     0 -212.64434    0   69 -214.06383 -212.64434  0.66%     -  299s
+     0     0 -212.64434    0   86 -214.06383 -212.64434  0.66%     -  301s
+     0     0 -212.64434    0   57 -214.06383 -212.64434  0.66%     -  301s
+     0     0 -212.64434    0   61 -214.06383 -212.64434  0.66%     -  302s
+     0     0     cutoff    0      -214.06383 -214.06383  0.00%     -  302s
+
+Cutting planes:
+  Gomory: 8
+  Zero half: 21
+
+Explored 1 nodes (29145 simplex iterations) in 302.42 seconds
+Thread count was 1 (of 80 available processors)
+
+Solution count 6: -214.064 -214.064 -214.064 ... -9124.29
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -2.140638310429e+02, best bound -2.140638310429e+02, gap 0.0000%
