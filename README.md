@@ -1,6 +1,6 @@
 # PhISCS
 
-PhISCS is a tool for sub-perfect tumor phylogeny reconstruction via integrative use of Single Cell and Bulk Sequencing data.
+PhISCS is a tool for sub-perfect tumor phylogeny reconstruction via integrative use of Single Cell and Bulk Sequencing data, with latter being an optional. However, if provided, Bulk Sequencing data is expected to be of high depth of coverage (>= 1000x haploid coverage). As output, PhISCS reports (single) tree of tumor evolution together with a set of mutations for which Infinite Sites Assumption is violated. 
 
 ## Installation
 ```
@@ -13,7 +13,5 @@ cd PhISCS
 
 
 ## Contact
-If you have an urgent question or any comments, we would be glad if you e-mail us.
+If you have any questions please e-mail us at smalikic@sfu.ca or frashidi@iu.edu.
 
-* [Salem Malikic](mailto:salemmalikic05@gmail.com)
-* [Farid Rashidi](mailto:frashidi@iu.edu)
