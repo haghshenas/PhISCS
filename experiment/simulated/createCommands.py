@@ -3,34 +3,34 @@ import subprocess
 import time
 import sys
 
-file = open('run_data_1-2.sh', 'w')
-file.write('#!/usr/bin/env bash\n')
-file.write('''
-killbg() {
-    for p in "${pids[@]}" ; do
-        kill "$p";
-    done
-}
-trap "exit" INT TERM ERR
-trap "kill 0" EXIT
-trap killbg EXIT
+file = open('_myrun___.sh', 'w')
+# file.write('#!/usr/bin/env bash\n')
+# file.write('''
+# killbg() {
+#     for p in "${pids[@]}" ; do
+#         kill "$p";
+#     done
+# }
+# trap "exit" INT TERM ERR
+# trap "kill 0" EXIT
+# trap killbg EXIT
 
-pids=()\n''')
+# pids=()\n''')
 
 app = 'ilp'
 ss = [10, 7, 4]
-ks = [1, 2]
-whichdata = 'data_1/'
+ks = [0, 1, 2]
+whichdata = 'data/'
 
 cmdEXE = {}
 cmdEXE['z3'] = 'python src/z3.py'
 cmdEXE['ilp'] = 'python src/ilp.py'
 cmdEXE['maxhs'] = './src/csp_maxsat -s /home/frashidi/_PhISCS/src/solver/maxhs'
 cmdEXE['maxino'] = './src_/csp_maxsat -s /home/frashidi/_PhISCS/src/solver/maxino/maxino-2015-k16-static -i'
-fns = ['0.15', '0.25']
+fns = ['0.05', '0.10', '0.15', '0.25']
 timeout = 24*3600
 
-df = pd.read_csv('_param_1.txt', index_col=0, sep='\t')
+df = pd.read_csv('_param.txt', index_col=0, sep='\t')
 
 def run_helper(ss, ks, fns):
     pids =[]
@@ -51,7 +51,7 @@ def run_helper(ss, ks, fns):
                         odir = 'result/' + app
                         fn_rate = df.loc[name.replace('.SCnoisy',''), 'FN']
                         fp_rate = df.loc[name.replace('.SCnoisy',''), 'FP']                        
-                        command = '{} -f {} -n {} -p {} -o {} -w {} -m {} -b {} -e {} -T {} --truevaf &'.format(cmdEXE[app], 
+                        command = '{} -f {} -n {} -p {} -o {} -w {} -m {} -b {} -e {} -T {} --truevaf'.format(cmdEXE[app], 
                                                                     infile, 
                                                                     fn_rate, 
                                                                     fp_rate, 
@@ -59,11 +59,11 @@ def run_helper(ss, ks, fns):
                                                                     0, 
                                                                     k, 
                                                                     bulkfile, 
-                                                                    0,  
+                                                                    0.03,  
                                                                     timeout)
                         file.write(command+'\n')
-                        file.write('pids+=($!)\n')
+                        # file.write('pids+=($!)\n')
 run_helper(ss, ks, fns)
 
-file.write('\nwait')
+# file.write('\nwait')
 file.close()
