@@ -12,13 +12,14 @@ cd PhISCS
 ## Running
 ### Usage
 ```
-usage: toolname [-h] -f FILE -n FNWEIGHT -p FPWEIGHT -o OUTDIR
-                [-m MAXMUT] [-t THREADS]
+usage: toolname [-h] -f FILE -n FNWEIGHT -p FPWEIGHT -o OUTDIR [-w COLWEIGHT]
+              	[-m MAXMUT] [-t THREADS] [-b BULK] [-e DELTA] [--truevaf]
+              	[-T TIME]
 
 Required arguments:
    -f, --file     STR        Input matrix file
    -n, --fnWeight INT        Weight for false negative
-   -p, --fpWeight INT        Weight for false negative
+   -p, --fpWeight INT        Weight for false positive
    -o, --outDir   STR        Output directory
 
 Optional arguments:
