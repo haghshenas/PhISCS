@@ -7,9 +7,9 @@ file = open('_myrun___.sh', 'w')
 # file.write('#!/usr/bin/env bash\n')
 # file.write('''
 # killbg() {
-#     for p in "${pids[@]}" ; do
-#         kill "$p";
-#     done
+#	 for p in "${pids[@]}" ; do
+#		 kill "$p";
+#	 done
 # }
 # trap "exit" INT TERM ERR
 # trap "kill 0" EXIT
@@ -19,7 +19,7 @@ file = open('_myrun___.sh', 'w')
 
 app = 'ilp'
 ss = [10, 7, 4]
-ks = [0, 1, 2]
+ks = [2, 1, 0]
 whichdata = 'data/'
 
 cmdEXE = {}
@@ -33,36 +33,36 @@ timeout = 24*3600
 df = pd.read_csv('_param.txt', index_col=0, sep='\t')
 
 def run_helper(ss, ks, fns):
-    pids =[]
-    for i in range(1, 11):
-        for s in ss:
-            if s in [4, 7]:
-                cov = 2000
-            elif s in [10]:
-                cov = 10000
-            for k in ks:
-                for fn in fns:
-                    for fp in [0.0001]:
-                        name = 'simNo_'+str(i)+'-n_100-m_40-s_'+str(s)+'-minVAF_0.05-cov_'+str(cov)+'-k_'+\
-                        str(k)+'-fn_'+fn+'-fp_'+str(fp)+'-na_0.15.SCnoisy'
-                        bulk = 'simNo_'+str(i)+'-n_100-m_40-s_'+str(s)+'-minVAF_0.05-cov_'+str(cov)+'-k_'+str(k)+'.bulk'
-                        infile = whichdata + name
-                        bulkfile = whichdata + bulk
-                        odir = 'result/' + app
-                        fn_rate = df.loc[name.replace('.SCnoisy',''), 'FN']
-                        fp_rate = df.loc[name.replace('.SCnoisy',''), 'FP']                        
-                        command = '{} -f {} -n {} -p {} -o {} -w {} -m {} -b {} -e {} -T {} --truevaf'.format(cmdEXE[app], 
-                                                                    infile, 
-                                                                    fn_rate, 
-                                                                    fp_rate, 
-                                                                    odir, 
-                                                                    0, 
-                                                                    k, 
-                                                                    bulkfile, 
-                                                                    0.03,  
-                                                                    timeout)
-                        file.write(command+'\n')
-                        # file.write('pids+=($!)\n')
+	pids =[]
+	for k in ks:
+		for s in ss:
+			if s in [4, 7]:
+				cov = 2000
+			elif s in [10]:
+				cov = 10000
+			for fn in fns:
+				for fp in [0.0001]:
+					for i in range(1, 11):
+						name = 'simNo_'+str(i)+'-n_100-m_40-s_'+str(s)+'-minVAF_0.05-cov_'+str(cov)+'-k_'+\
+						str(k)+'-fn_'+fn+'-fp_'+str(fp)+'-na_0.15.SCnoisy'
+						bulk = 'simNo_'+str(i)+'-n_100-m_40-s_'+str(s)+'-minVAF_0.05-cov_'+str(cov)+'-k_'+str(k)+'.bulk'
+						infile = whichdata + name
+						bulkfile = whichdata + bulk
+						odir = 'result/' + app
+						fn_rate = df.loc[name.replace('.SCnoisy',''), 'FN']
+						fp_rate = df.loc[name.replace('.SCnoisy',''), 'FP']
+						command = '{} -f {} -n {} -p {} -o {} -w {} -m {} -b {} -e {} -T {} --truevaf'.format(cmdEXE[app], 
+																	infile, 
+																	fn_rate, 
+																	fp_rate, 
+																	odir, 
+																	0, 
+																	k, 
+																	bulkfile, 
+																	0.03, 
+																	timeout)
+						file.write(command+'\n')
+						# file.write('pids+=($!)\n')
 run_helper(ss, ks, fns)
 
 # file.write('\nwait')
