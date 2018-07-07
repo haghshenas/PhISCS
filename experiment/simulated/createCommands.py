@@ -3,7 +3,7 @@ import subprocess
 import time
 import sys
 
-file = open('_myrun___.sh', 'w')
+file = open('_simulated1.sh', 'w')
 # file.write('#!/usr/bin/env bash\n')
 # file.write('''
 # killbg() {
@@ -19,7 +19,7 @@ file = open('_myrun___.sh', 'w')
 
 app = 'ilp'
 ss = [10, 7, 4]
-ks = [2, 1, 0]
+ks = [2, 1]
 whichdata = 'data/'
 
 cmdEXE = {}
@@ -36,10 +36,7 @@ def run_helper(ss, ks, fns):
 	pids =[]
 	for k in ks:
 		for s in ss:
-			if s in [4, 7]:
-				cov = 2000
-			elif s in [10]:
-				cov = 10000
+			cov = 10000
 			for fn in fns:
 				for fp in [0.0001]:
 					for i in range(1, 11):
@@ -51,7 +48,7 @@ def run_helper(ss, ks, fns):
 						odir = 'result/' + app
 						fn_rate = df.loc[name.replace('.SCnoisy',''), 'FN']
 						fp_rate = df.loc[name.replace('.SCnoisy',''), 'FP']
-						command = '{} -f {} -n {} -p {} -o {} -w {} -m {} -b {} -e {} -T {} --truevaf'.format(cmdEXE[app], 
+						command = '{} -f {} -n {:.3f} -p {:.6f} -o {} -w {} -m {} -b {} -e {} -T {} --truevaf'.format(cmdEXE[app], 
 																	infile, 
 																	fn_rate, 
 																	fp_rate, 
@@ -59,7 +56,7 @@ def run_helper(ss, ks, fns):
 																	0, 
 																	k, 
 																	bulkfile, 
-																	0.03, 
+																	0.05, 
 																	timeout)
 						file.write(command+'\n')
 						# file.write('pids+=($!)\n')
