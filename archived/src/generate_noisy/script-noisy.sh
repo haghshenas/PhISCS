@@ -1,7 +1,7 @@
 #!/bin/bash
 
-directory='../../data/simulated/30oct/ground'
-percentsFN=(0.15 0.25)
+directory='./simulations'
+percentsFN=(0.05 0.10 0.15 0.25)
 percentsFP=(0.0001)
 percentsNA=(0.15)
 files="$(find $directory -type f -name '*.SCnoNoise' | sort)"
