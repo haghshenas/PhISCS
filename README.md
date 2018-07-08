@@ -23,6 +23,7 @@ Required arguments:
    -o, --outDir         STR    Output directory
 
 Optional arguments:
+   -w, --colProbability INT    Probablity of eliminated columns
    -kmax, --maxMut      INT    Max number mutations to be eliminated [0]
    -t, --threads        INT    Number of threads [1]
    -b, --bulk           STR    Bulk sequencing file [""]
