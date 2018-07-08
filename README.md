@@ -12,19 +12,23 @@ cd PhISCS
 ## Running
 ### Usage
 ```
-usage: toolname [-h] -f FILE -n FNWEIGHT -p FPWEIGHT -o OUTDIR [-w COLWEIGHT]
-              	[-m MAXMUT] [-t THREADS] [-b BULK] [-e DELTA] [--truevaf]
-              	[-T TIME]
+usage: toolname [-h] -f FILE -fn FNPROBABILITY -fp FPPROBABILITY -o OUTDIR
+              [-w COLPROBABILITY] [-kmax MAXMUT] [-t THREADS] [-b BULK]
+              [-e DELTA] [--truevaf] [--timeout TIMEOUT]
 
 Required arguments:
-   -f, --file     STR        Input matrix file
-   -n, --fnWeight INT        Weight for false negative
-   -p, --fpWeight INT        Weight for false positive
-   -o, --outDir   STR        Output directory
+   -f, --file     		STR        Input matrix file
+   -fn, --fnProbability INT        Probablity of false negative
+   -fp, --fpProbability INT        Probablity of false positive
+   -o, --outDir   		STR        Output directory
 
 Optional arguments:
-   -m, --maxMut   INT        Max number mutations to be eliminated [0]
-   -t, --threads  INT        Number of threads [1]
+   -kmax, --maxMut  	INT        Max number mutations to be eliminated [0]
+   -t, --threads  		INT        Number of threads [1]
+   -b, --bulk 			STR 	   Bulk sequencing file [""]
+   -e, --delta 			FLT 	   Delta in VAF [0.01]
+   --truevaf					   Use tree VAFs
+   --timeout 			INT 	   Max time allowed for the computation
 
 Other arguments:
    -h, --help                Show this help message and exit
