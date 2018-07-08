@@ -48,7 +48,7 @@ def run_helper(ss, ks, fns):
 						odir = 'result/' + app
 						fn_rate = df.loc[name.replace('.SCnoisy',''), 'FN']
 						fp_rate = df.loc[name.replace('.SCnoisy',''), 'FP']
-						command = '{} -f {} -n {:.3f} -p {:.6f} -o {} -w {} -m {} -b {} -e {} -T {} --truevaf'.format(cmdEXE[app], 
+						command = '{} -f {} -fn {:.3f} -fp {:.6f} -o {} -w {} -kmax {} -b {} -e {} --timeout {} --truevaf'.format(cmdEXE[app], 
 																	infile, 
 																	fn_rate, 
 																	fp_rate, 
