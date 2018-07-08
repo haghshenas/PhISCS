@@ -54,11 +54,11 @@ The program will generate two files in **OUT_DIR** folder (which is set by argum
 #### 1. log file
 Suppose the input file is **INPUT_MATRIX.ext**, the log will be stored in file **OUT_DIR/INPUT_MATRIX.log**. For example:
 ```
-input file: simID_1-n_10-m_50-fn_0.05-fp_0.001-na_0-k_0.noisyMatrix
-  log file: simID_1-n_10-m_50-fn_0.05-fp_0.001-na_0-k_0.log
+input file: simNo_1-n_100-m_40-s_4-minVAF_0.05-cov_10000-k_0-fn_0.05-fp_0.0001-na_0.15.SCnoisy
+  log file: simNo_1-n_100-m_40-s_4-minVAF_0.05-cov_10000-k_0-fn_0.05-fp_0.0001-na_0.15.ILP.log
 
 input file: wang.txt
-  log file: wang.log
+  log file: wang.ILP.log
 ```
 The log file contains a summary for running the program on the input file. It should be in the following format:
 <pre><code>FILE_NAME: STR
@@ -82,11 +82,11 @@ MUTATIONS_REMOVED_INDEX: [INT<sub>1</sub>,INT<sub>2</sub>,...,INT<sub>MUTATIONS_
 #### 2. output matrix file
 Suppose the input file is **INPUT_MATRIX.ext**, the output matrix will be stored in file **OUT_DIR/INPUT_MATRIX.output**. For example:
 ```
- input file: simID_1-n_10-m_50-fn_0.05-fp_0.001-na_0-k_0.noisyMatrix
-output file: simID_1-n_10-m_50-fn_0.05-fp_0.001-na_0-k_0.output
+ input file: simNo_1-n_100-m_40-s_4-minVAF_0.05-cov_10000-k_0-fn_0.05-fp_0.0001-na_0.15.SCnoisy
+output file: simNo_1-n_100-m_40-s_4-minVAF_0.05-cov_10000-k_0-fn_0.05-fp_0.0001-na_0.15.ILP.conflictFreeMatrix
 
  input file: wang.txt
-output file: wang.output
+output file: wang.ILP.conflictFreeMatrix
 ```
 The output file is also a tab-delimited file with the exact same format as the input file. The only difference compared to the input file is that _x_ values of the matrix are modified so that the matrix is conflict free.
 
