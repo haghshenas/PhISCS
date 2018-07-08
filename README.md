@@ -46,7 +46,7 @@ cell3             x        x        x        ...      x
 cellC             x        x        x        ...      x
 ```
 Where _x_ is in {0, 1, 2}. More specifically:
-* The first line is the header line. First string is an arbitrary string and next _M_ strings are the names of mutations.
+* The first line is the header line. First string in upper left corner must be **cellID/mutID** and next _M_ strings are the names of mutations.
 * Each of the next _C_ lines contains mutation information for a single cell. The first string is cell name and next _M_ integers show if a mutation is observed (1) or not (0). The value 2 means the information is not available (missing).
 
 ### Output
