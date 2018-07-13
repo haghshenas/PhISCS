@@ -17,27 +17,27 @@ parser = argparse.ArgumentParser(description='big_brother', add_help=True)
 parser.add_argument('-f', '--file', required=True,
                     type=str,
                     help='Input matrix file')
-parser.add_argument('-n', '--fnWeight', required=True,
+parser.add_argument('-fn', '--fnProbability', required=True,
                     type=float,
-                    help='Weight for false negative')
-parser.add_argument('-p', '--fpWeight', required=True,
+                    help='Probablity of false negative')
+parser.add_argument('-fp', '--fpProbability', required=True,
                     type=float,
-                    help='Weight for false negative')
+                    help='Probablity of false positive')
 parser.add_argument('-o', '--outDir', required=True,
                     type=str,
                     help='Output directory')
-parser.add_argument('-w', '--colWeight', default=0,
+parser.add_argument('-w', '--colProbability', default=0,
                     type=float,
-                    help='Weight of eliminated columns')
+                    help='Probablity of eliminated columns')
 
 # Optional:
-parser.add_argument('-m', '--maxMut', default=0,
+parser.add_argument('-kmax', '--maxMut', default=0,
                     type=int,
-                    help='Max number mutations to be eliminated [0]')
+                    help='Max number of mutations to be eliminated [0]')
 
 parser.add_argument('-t', '--threads', default=1,
                     type=int,
-                    help='Number of threads [Default is 1]')
+                    help='Number of threads [1]')
 parser.add_argument('-b', '--bulk', default=None,
                     type=str,
                     help='Bulk sequencing file [""]')
@@ -46,8 +46,8 @@ parser.add_argument('-e', '--delta', default=0.01,
                     help='Delta in VAF [0.01]')
 parser.add_argument('--truevaf',  action='store_true',
                     help='Use tree VAFs')
-parser.add_argument('-T', '--time', action='store', type=int, default=1e100,
-                    help='maximum time allowed for the computation.')
+parser.add_argument('--timeout', action='store', type=int, default=1e100,
+                    help='Max time allowed for the computation')
 
 args = parser.parse_args()
 
@@ -81,12 +81,12 @@ matrix_input = np.delete(inp, 0, 1)
 
 # =========== GENERAL INITIALIZATION
 cells = matrix_input.shape[0]
-mutations = matrix_input.shape[1]
+numMutations = matrix_input.shape[1]
 
 # k_max = args.maxMut
 
-fn_weight = args.fnWeight
-fp_weight = args.fpWeight
+fn_weight = args.fnProbability
+fp_weight = args.fpProbability
 
 using_bulk = False
 if args.bulk:
@@ -100,14 +100,14 @@ if args.bulk:
             if args.truevaf:
                 vaf = float(values[5].split(';')[1].split('=')[1])
             else:
-                vaf = float(values[3]) / (float(values[4])+float(values[3]))
+                vaf = 2*float(values[3]) / (float(values[4])+float(values[3])) # use slightly modified definition of VAF which represents expected ccf
             bulk_mutations.append(vaf)
 
 # =========== VARIABLES
 model = Model('ILP')
 model.Params.Threads = args.threads
 model.Params.LogFile = gurobi_log
-model.setParam('TimeLimit', args.time)
+model.setParam('TimeLimit', args.timeout)
 
 print('Generating variables...')
 
@@ -124,7 +124,7 @@ input_0entry = 0
 input_1entry = 0
 while c < cells:
     m = 0
-    while m < mutations:
+    while m < numMutations:
         # 0->1 [False Negative / Allele dropout]
         if matrix_input[c][m] == 0:
             input_0entry += 1
@@ -155,40 +155,39 @@ while c < cells:
 
 # --- Conflict counter
 B = {}
-p = 0
-while p < mutations:
-    q = 0
-    while q < mutations:
+for p in range(numMutations+1):
+    for q in range(numMutations+1):
         B[p, q, 1, 1] = model.addVar(vtype=GRB.BINARY, obj=0,
                                      name='B[{0},{1},1,1]'.format(p, q))
         B[p, q, 1, 0] = model.addVar(vtype=GRB.BINARY, obj=0,
                                      name='B[{0},{1},1,0]'.format(p, q))
         B[p, q, 0, 1] = model.addVar(vtype=GRB.BINARY, obj=0,
                                      name='B[{0},{1},0,1]'.format(p, q))
-        q += 1
-    p += 1
 
 
-# --- Column delition
+# --- Column deletion
 K = {}
-m = 0
-while m < mutations:
+for m in range(numMutations):
     e0_m = list(matrix_input[:,m]).count(0)
     e1_m = list(matrix_input[:,m]).count(1)
 
+	# Salem TBD: check the weights assigned to K in the objective
     K[m] = model.addVar(vtype=GRB.BINARY,
-                        obj=args.colWeight - e0_m * log1_b - e1_m * log1_a,
+                        obj=args.colProbability - e0_m * log1_b - e1_m * log1_a,
                         name='K[{0}]'.format(m))
-    m += 1
+K[numMutations] = model.addVar(vtype=GRB.BINARY, obj=0, name = 'K[{0}]'.format(numMutations))
+model.addConstr(K[numMutations] == 0)
 
+'''
+all commented by Salem
 if using_bulk:
     A = {}
     C1 = {}
     C2 = {}
     p = 0
-    while p < mutations:
+    while p < numMutations:
         q = 0
-        while q < mutations:
+        while q < numMutations:
             A[p, q] = model.addVar(vtype=GRB.BINARY, obj=0,
                                    name='A[{0},{1}]'.format(p, q))
             r = 0
@@ -199,6 +198,15 @@ if using_bulk:
 
             q += 1
         p += 1
+'''
+
+# 5 lines below added by Salem
+if using_bulk:
+	A = {}
+	for p in range(numMutations + 1): # mutation with index numMutation is null mutation
+		for q in range(numMutations + 1):
+			A[p,q] = model.addVar(vtype=GRB.BINARY, obj=0, name='A[{0},{1}]'.format(p,q))	
+
 
 model.modelSense = GRB.MAXIMIZE
 model.update()
@@ -207,10 +215,10 @@ model.update()
 print('Generating constraints...')
 
 # --- sum K_i <= k_max
-model.addConstr(quicksum(K[m] for m in range(mutations)) <= args.maxMut)
+model.addConstr(quicksum(K[m] for m in range(numMutations)) <= args.maxMut)
 
 m = 0
-while m < mutations:
+while m < numMutations:
     c = 0
     while c < cells:
         model.addConstr(F0[c,m]<= 1-K[m])
@@ -222,9 +230,9 @@ while m < mutations:
 c = 0
 while c < cells:
     p = 0
-    while p < mutations:
+    while p < numMutations:
         q = 0
-        while q < mutations:
+        while q < numMutations:
             model.addConstr(
                 (matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p]) +
                 (matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q]) -
@@ -245,96 +253,112 @@ while c < cells:
     c += 1
 
 # --- No conflict between columns
-p = 0
-while p < mutations:
-    q = 0
-    while q < mutations:
-        model.addConstr(
-            B[p, q, 0, 1] + B[p, q, 1, 0] + B[p, q, 1, 1]
-            - K[p] - K[q]
-            <= 2,
-            'Conf[{0},{1}]'.format(p, q))
-        q += 1
-    p += 1
+for p in range(numMutations):
+    for q in range(numMutations):
+        model.addConstr(B[p, q, 0, 1] + B[p, q, 1, 0] + B[p, q, 1, 1] - K[p] - K[q] <= 2, 'Conf[{0},{1}]'.format(p, q))
+
+# --- Null mutation present in each cell
+for p in range(numMutations+1):
+	model.addConstr(B[p,numMutations, 1, 0] == 0)
+	# model.addConstr(B[p,numMutations, 0, 0] == 0)
 
 # --- Constraint for VAFs
 if using_bulk:
-    p = 0
-    while p < mutations:
-        q = 0
-        while q < mutations:
-            c = 0
+	bulk_mutations.append(1.0)
+	for p in range(numMutations+1):
+		for q in range(numMutations+1):
+		#	if p == q:
+		#		continue
+            		#Salem commented: c = 0
 
-            quadratic_sum = 0
+            		#Salem commented: quadratic_sum = 0
 
-            while c < cells:
-                Ytp = matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p]
-                Ytq = matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q]
+            		#Salem commented: while c < cells:
+                	#Salem commented: Ytp = matrix_input[c, p] % 2 + F0[c, p] - F1[c, p] + X[c, p]
+                	#Salem commented: Ytq = matrix_input[c, q] % 2 + F0[c, q] - F1[c, q] + X[c, q]
 
-                # # Constraint 1.b.1
-                # model.addConstr(C1[c,p,q] <= Ytp)
-                # model.addConstr(C1[c,p,q] <= A[p, q])
-                # model.addConstr(C1[c,p,q] >= Ytp + A[p, q] -1)
+                	# # Constraint 1.b.1
+               		# model.addConstr(C1[c,p,q] <= Ytp)
+                	# model.addConstr(C1[c,p,q] <= A[p, q])
+                	# model.addConstr(C1[c,p,q] >= Ytp + A[p, q] -1)
 
-                # model.addConstr(Ytq <= C1[c,p,q] + (1- A[p, q]))
+                	# model.addConstr(Ytq <= C1[c,p,q] + (1- A[p, q]))
 
 
-                # # Constraint 1.b.2 part1
-                # model.addConstr(C2[c,p,q] <= Ytq)
-                # model.addConstr(C2[c,p,q] <= 1-Ytp)
-                # model.addConstr(C2[c,p,q] >= Ytq + (1-Ytp) -1)
+                	# # Constraint 1.b.2 part1
+                	# model.addConstr(C2[c,p,q] <= Ytq)
+                	# model.addConstr(C2[c,p,q] <= 1-Ytp)
+                	# model.addConstr(C2[c,p,q] >= Ytq + (1-Ytp) -1)
+			
+                	# quadratic_sum += C2[c,p,q]
 
-                # quadratic_sum += C2[c,p,q]
-
-                # New Constraint 1.b
-                model.addConstr(C1[c,p,q] <= Ytp)
-                model.addConstr(C1[c,p,q] <= A[p, q])
-                model.addConstr(C1[c,p,q] >= Ytp + A[p, q] -1)
-
-                model.addConstr(Ytq <= C1[c,p,q] + (1- A[p, q]))
+                	# New Constraint 1.b
+                	#Salem commented: model.addConstr(C1[c,p,q] <= Ytp)
+                	#Salem commented: model.addConstr(C1[c,p,q] <= A[p, q])
+                	#Salem commented: model.addConstr(C1[c,p,q] >= Ytp + A[p, q] -1)
+                	#Salem commented: model.addConstr(Ytq <= C1[c,p,q] + (1- A[p, q]))
                 
-                c += 1
+                	#Salem commented: c += 1
             
-            # # Constraint 1.b.2 part2
-            # model.addConstr(quadratic_sum >= 1- A[p,q] - K[p] - K[q])
+            		# # Constraint 1.b.2 part2
+            		# model.addConstr(quadratic_sum >= 1- A[p,q] - K[p] - K[q])
 
-            # # model.addConstr(A[p, q] + A[q, p] <= 1)
+            		# # model.addConstr(A[p, q] + A[q, p] <= 1)
 
-            # Constraints 1.a
-            model.addConstr(A[p, q] <= 1 - K[p])
-            model.addConstr(A[p, q] <= 1 - K[q])
+            		# Constraints 1.a
 
-            model.addConstr(A[q, p] <= 1 - K[p])
-            model.addConstr(A[q, p] <= 1 - K[q])
+			if True: #p<numMutations and q<numMutations:
+				model.addConstr(A[p, q] <= 1 - K[p])
+				model.addConstr(A[p, q] <= 1 - K[q])
 
-            # Constraint 1.c
-            model.addConstr(A[p, q] * bulk_mutations[p] * (1 + delta)
-                            >= A[p, q] * bulk_mutations[q])
+				model.addConstr(A[q, p] <= 1 - K[p]) # repeated/unnecessary
+				model.addConstr(A[q, p] <= 1 - K[q]) # repeated/unnecessary
+			
 
-            r = 0
-            while r < mutations:
-                # Constraint 2
-                model.addConstr(
-                    bulk_mutations[p] * (1 + delta) >= 
-                    bulk_mutations[q] * (A[p, q] - A[r, q] - A[q, r]) + 
-                    bulk_mutations[r] * (A[p, r] - A[r, q] - A[q, r])
-                )
+			# Salem added - start
+			# Constraint 1.b
+			model.addConstr(A[p,q] + B[p,q,0,1] <= 1 + K[p] + K[q])
+			model.addConstr(B[p,q,1,0] + B[p,q,1,1] - A[p,q] <= 1 + K[p] + K[q])
+			# Salem added - end
 
-                # Constraint 1.d
-                model.addConstr(
-                    A[p, r] >= A[p, q] + A[q, r] - 1
-                )
-                
-                r += 1
+            		# Constraint 1.c
+			model.addConstr(A[p, q] * bulk_mutations[p] * (1 + delta)
+                            		>= A[p, q] * bulk_mutations[q])
 
-            q += 1
-        p += 1
+			for r in range(numMutations+1):
+                		# Constraint 2
+                		model.addConstr(
+                    				bulk_mutations[p] * (1 + delta) >= 
+                    				bulk_mutations[q] * (A[p, q] - A[r, q] - A[q, r]) + 
+                    				bulk_mutations[r] * (A[p, r] - A[r, q] - A[q, r])
+                				)
 
+                		# Constraint 1.d
+                		model.addConstr(
+                    				A[p, r] >= A[p, q] + A[q, r] - 1
+                				)
+
+
+		candidateAncestors = [i for i in range(numMutations+1)]
+		candidateAncestors.remove(p)
+
+		if p<numMutations:
+			model.addConstr(quicksum(A[s,p] for s in candidateAncestors) >= 1 - K[p])
+		elif p==numMutations:
+			model.addConstr(quicksum(A[s,p] for s in candidateAncestors) == 0)
+		else:
+			print("p index out of range. Exiting")
+			sys.exit(2)
+		
 time_to_model = datetime.now() - start_model
 # ====== OPTIMIZE
 start_optimize = datetime.now()
 
 model.optimize()
+
+
+
+
 
 # ====== POST OPTIMIZATION
 if model.status == GRB.Status.INFEASIBLE:
@@ -361,7 +385,7 @@ c = 0
 while c < cells:
     m = 0
     row = []
-    while m < mutations:
+    while m < numMutations:
         if not isinstance(F0[c, m], int):
             row.append(int(round(F0[c, m].X)))
             flip0_sol_tot += int(round(F0[c, m].X))
@@ -384,7 +408,7 @@ c = 0
 while c < cells:
     m = 0
     row = []
-    while m < mutations:
+    while m < numMutations:
         if not isinstance(F1[c, m], int):
             row.append(int(round(F1[c, m].X)))
             flip1_sol_tot += int(round(F1[c, m].X))
@@ -405,22 +429,22 @@ file_out = open('{0}.ILP.conflictFreeMatrix'.format(outfile), 'w+')
 # --- Solution info
 removed_cols = []
 removed_mutation_names = []
-removed_mutation_indeces = []
+removed_mutation_indices = []
 solution_mutation_names = []
 m = 0
-while m < mutations:
-    value = int(K[m].X)
+while m < numMutations:
+    value = round(K[m].X)
     removed_cols.append(value)
     if value == 0:
         solution_mutation_names.append(mutation_names[m])
     else:
         removed_mutation_names.append(mutation_names[m])
-        removed_mutation_indeces.append(str(m + 1))
+        removed_mutation_indices.append(str(m + 1))
     m += 1
 
 # print(removed_cols)
 print(removed_mutation_names)
-print(removed_mutation_indeces)
+print(removed_mutation_indices)
 
 file_out.write('cellID/mutID\t')
 file_out.write('\t'.join(solution_mutation_names))
@@ -436,7 +460,7 @@ c = 0
 while c < cells:
     m = 0
     row = []
-    while m < mutations:
+    while m < numMutations:
         if int(K[m].X) == 0:
             # print(int(X[c, m].X))
             if matrix_input[c, m] == 0:
@@ -468,10 +492,10 @@ log = open('{0}.ILP.log'.format(outfile), 'w+')
 # --- Input info
 log.write('FILE_NAME: {0}\n'.format(str(os.path.basename(args.file))))
 log.write('NUM_CELLS(ROWS): {0}\n'.format(str(cells)))
-log.write('NUM_MUTATIONS(COLUMNS): {0}\n'.format(str(mutations)))
+log.write('NUM_MUTATIONS(COLUMNS): {0}\n'.format(str(numMutations)))
 log.write('FN_WEIGHT: {0}\n'.format(str(fn_weight)))
 log.write('FP_WEIGHT: {0}\n'.format(str(fp_weight)))
-log.write('w_WEIGHT: {0}\n'.format(str(args.colWeight)))
+log.write('w_WEIGHT: {0}\n'.format(str(args.colProbability)))
 log.write('NUM_THREADS: {0}\n'.format(str(args.threads)))
 log.write('MODEL_SOLVING_TIME_SECONDS: {0:.3f}\n'.format(time_to_opt.total_seconds()))
 log.write('RUNNING_TIME_SECONDS: {0:.3f}\n'.format(time_to_run.total_seconds()))
@@ -519,6 +543,13 @@ log.write('MUTATIONS_REMOVED_UPPER_BOUND: {0}\n'.format(str(args.maxMut)))
 log.write('MUTATIONS_REMOVED_NUM: {0}\n'. format(
     str(sum(removed_cols))))
 log.write('MUTATIONS_REMOVED_INDEX: {0}\n'.format(
-    ','.join(removed_mutation_indeces)))
-
+    ','.join(removed_mutation_indices)))
+log.write('MUTATIONS_REMOVED_ID: {}\n'.format(','.join(removed_mutation_names)))
 log.close()
+
+'''
+A_values_File = open(outfile + ".A", "w")
+for p in range(numMutations):
+	A_values_File.write('\t'.join(str(round(A[p,q].X)) for q in range(numMutations)))
+	A_values_File.write('\n')
+'''
