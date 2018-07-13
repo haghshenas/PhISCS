@@ -1,0 +1,46 @@
+
+Gurobi 7.5.2 (linux64) logging started Sat Jul  7 16:08:27 2018
+
+Changed value of parameter LogFile to result/ilp/simNo_2-n_100-m_40-s_10-minVAF_0.05-cov_10000-k_1-fn_0.25-fp_0.0001-na_0.15.ILP.gurobiSolverLog
+   Prev: gurobi.log  Default: 
+Changed value of parameter TimeLimit to 86400.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 639293 rows, 10765 columns and 1940420 nonzeros
+Variable types: 0 continuous, 10765 integer (10765 binary)
+Coefficient statistics:
+  Matrix range     [8e-05, 4e+00]
+  Objective range  [1e+00, 2e+01]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [6e-02, 2e+00]
+Presolve removed 145005 rows and 1160 columns (presolve time = 5s) ...
+Presolve removed 145720 rows and 1160 columns (presolve time = 13s) ...
+Presolve removed 217220 rows and 1875 columns (presolve time = 15s) ...
+Presolve removed 217220 rows and 1875 columns
+Presolve time: 19.58s
+Presolved: 422073 rows, 8890 columns, 1267362 nonzeros
+Variable types: 0 continuous, 8890 integer (8890 binary)
+Presolved: 8890 rows, 430963 columns, 1276252 nonzeros
+
+Presolve removed 8890 rows and 430963 columns
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.2131342e+01   0.000000e+00   3.328800e+04     28s
+   11308   -2.0274083e+02   0.000000e+00   0.000000e+00     29s
+   11308   -2.0274083e+02   0.000000e+00   0.000000e+00     30s
+
+Root relaxation: objective -2.027408e+02, 11308 iterations, 5.47 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0    -202.7408348 -202.74083  0.00%     -   40s
+
+Explored 0 nodes (14924 simplex iterations) in 40.80 seconds
+Thread count was 1 (of 80 available processors)
+
+Solution count 1: -202.741 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -2.027408348116e+02, best bound -2.027408348116e+02, gap 0.0000%

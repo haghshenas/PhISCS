@@ -1,0 +1,47 @@
+
+Gurobi 7.5.2 (linux64) logging started Sat Jul  7 16:05:36 2018
+
+Changed value of parameter LogFile to result/ilp/simNo_4-n_100-m_40-s_10-minVAF_0.05-cov_10000-k_1-fn_0.10-fp_0.0001-na_0.15.ILP.gurobiSolverLog
+   Prev: gurobi.log  Default: 
+Changed value of parameter TimeLimit to 86400.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 639293 rows, 10765 columns and 1940420 nonzeros
+Variable types: 0 continuous, 10765 integer (10765 binary)
+Coefficient statistics:
+  Matrix range     [3e-05, 4e+00]
+  Objective range  [2e+00, 9e+00]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [7e-02, 2e+00]
+Found heuristic solution: objective -3196.644964
+Presolve removed 136448 rows and 1113 columns (presolve time = 5s) ...
+Presolve removed 137115 rows and 1114 columns (presolve time = 10s) ...
+Presolve removed 203818 rows and 1781 columns (presolve time = 15s) ...
+Presolve removed 203818 rows and 1781 columns
+Presolve time: 15.24s
+Presolved: 435475 rows, 8984 columns, 1309047 nonzeros
+Variable types: 0 continuous, 8984 integer (8984 binary)
+Presolved: 8984 rows, 444459 columns, 1318031 nonzeros
+
+Presolve removed 8984 rows and 444459 columns
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    3.2817269e+02   0.000000e+00   1.940900e+04     19s
+    7350   -4.9104260e+01   0.000000e+00   0.000000e+00     20s
+    7350   -4.9104260e+01   0.000000e+00   0.000000e+00     21s
+
+Root relaxation: objective -4.910426e+01, 7350 iterations, 4.24 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0     -49.1042598  -49.10426  0.00%     -   26s
+
+Explored 0 nodes (11025 simplex iterations) in 26.41 seconds
+Thread count was 1 (of 80 available processors)
+
+Solution count 2: -49.1043 -3196.64 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -4.910425983633e+01, best bound -4.910425983633e+01, gap 0.0000%
