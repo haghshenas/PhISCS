@@ -93,6 +93,29 @@ output file: wang.ILP.conflictFreeMatrix
 ```
 The output file is also a tab-delimited file with the exact same format as the input file. The only difference compared to the input file is that _x_ values of the matrix are modified so that the matrix is conflict free.
 
+## Example
+As a toy example, an input file is created and named as *input.txt* which contains:
+```
+cellID/mutID mut0 mut1 mut2 mut3 mut4
+cell0 2 0 1 1 2
+cell1 1 0 1 1 1
+cell2 2 2 0 1 2
+cell3 1 1 2 1 1
+cell4 0 1 1 2 1
+cell5 1 1 1 2 1
+```
+
+For running PhISCS without VAFs information:
+```
+python ilp.py -f input.txt -fn 0.05 -fp 0.0001 -o result/ -w 0 -kmax 3 --timeout 86400
+```
+
+For running PhISCS with VAFs information:
+```
+python ilp.py -f input.txt -fn 0.05 -fp 0.0001 -o result/ -w 0 -kmax 3 -b input.bulk -e 0.05 --timeout 86400
+```
+
+
 
 ## Contact
 If you have any questions please e-mail us at smalikic@sfu.ca or frashidi@iu.edu.
