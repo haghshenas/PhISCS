@@ -1,0 +1,47 @@
+
+Gurobi 8.0.1 (linux64) logging started Fri Aug  3 19:15:07 2018
+
+Changed value of parameter LogFile to result/noISAnoVAF/simNo_5-n_100-m_40-s_10-minVAF_0.05-cov_10000-k_1-fn_0.05-fp_0.0001-na_0.15.gurobi
+   Prev: gurobi.log  Default: 
+Changed value of parameter Threads to 1
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+Changed value of parameter TimeLimit to 86400.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 481643 rows, 9084 columns and 1428042 nonzeros
+Variable types: 0 continuous, 9084 integer (9084 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 2e+00]
+  Objective range  [1e-01, 9e+00]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 2e+00]
+Found heuristic solution: objective -7817.182777
+Presolve removed 12083 rows and 404 columns (presolve time = 5s) ...
+Presolve removed 12083 rows and 404 columns
+Presolve time: 5.74s
+Presolved: 469560 rows, 8680 columns, 1408680 nonzeros
+Variable types: 0 continuous, 8680 integer (8680 binary)
+Presolved: 8680 rows, 478240 columns, 1417360 nonzeros
+
+Presolve removed 8680 rows and 478240 columns
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -4.8280799e+01   0.000000e+00   5.616200e+04     10s
+    4214   -1.4916195e+02   0.000000e+00   0.000000e+00     11s
+    4214   -1.4916195e+02   0.000000e+00   0.000000e+00     12s
+
+Root relaxation: objective -1.491619e+02, 4214 iterations, 4.58 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0    -149.1619498 -149.16195  0.00%     -   11s
+
+Explored 0 nodes (4214 simplex iterations) in 11.97 seconds
+Thread count was 1 (of 64 available processors)
+
+Solution count 2: -149.162 -7817.18 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -1.491619498382e+02, best bound -1.491619498380e+02, gap 0.0000%
