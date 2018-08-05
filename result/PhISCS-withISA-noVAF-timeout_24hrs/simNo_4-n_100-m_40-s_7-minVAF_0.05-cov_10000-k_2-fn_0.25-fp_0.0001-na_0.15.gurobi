@@ -1,0 +1,79 @@
+
+Gurobi 8.0.1 (linux64) logging started Sat Aug  4 00:55:43 2018
+
+Changed value of parameter LogFile to result/withISAnoVAF/simNo_4-n_100-m_40-s_7-minVAF_0.05-cov_10000-k_2-fn_0.25-fp_0.0001-na_0.15.gurobi
+   Prev: gurobi.log  Default: 
+Changed value of parameter Threads to 1
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+Changed value of parameter TimeLimit to 86400.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 481643 rows, 9084 columns and 1428042 nonzeros
+Variable types: 0 continuous, 9084 integer (9084 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 2e+00]
+  Objective range  [1e+00, 2e+01]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 2e+00]
+Found heuristic solution: objective -5558.593395
+Presolve removed 12082 rows and 364 columns (presolve time = 5s) ...
+Presolve removed 12082 rows and 364 columns (presolve time = 10s) ...
+Presolve removed 12082 rows and 364 columns
+Presolve time: 11.43s
+Presolved: 469561 rows, 8720 columns, 1411840 nonzeros
+Variable types: 0 continuous, 8720 integer (8720 binary)
+Presolved: 8720 rows, 478281 columns, 1420560 nonzeros
+
+Presolve removed 8720 rows and 478281 columns
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.7565738e+02   0.000000e+00   4.367300e+04     18s
+    6849   -3.0549338e+02   0.000000e+00   0.000000e+00     20s
+    6849   -3.0549338e+02   0.000000e+00   0.000000e+00     22s
+
+Root relaxation: objective -3.054934e+02, 6849 iterations, 7.57 seconds
+Total elapsed time = 35.84s
+Total elapsed time = 40.52s
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 -305.49338    0  396 -5558.5934 -305.49338  94.5%     -   47s
+H    0     0                    -379.6890206 -305.49338  19.5%     -   48s
+H    0     0                    -328.3595760 -305.49338  6.96%     -   59s
+H    0     0                    -319.7192449 -305.49338  4.45%     -   60s
+     0     0 -308.45578    0  402 -319.71924 -308.45578  3.52%     -   72s
+     0     0 -310.12213    0  334 -319.71924 -310.12213  3.00%     -  128s
+     0     0 -310.12213    0  257 -319.71924 -310.12213  3.00%     -  164s
+     0     0 -310.43072    0  227 -319.71924 -310.43072  2.91%     -  178s
+     0     0 -310.73930    0  231 -319.71924 -310.73930  2.81%     -  183s
+     0     0 -310.73930    0  234 -319.71924 -310.73930  2.81%     -  186s
+     0     0 -311.97363    0  225 -319.71924 -311.97363  2.42%     -  196s
+     0     0 -312.15878    0  231 -319.71924 -312.15878  2.36%     -  203s
+     0     0 -312.16176    0  237 -319.71924 -312.16176  2.36%     -  207s
+     0     0 -312.68332    0  215 -319.71924 -312.68332  2.20%     -  225s
+     0     0 -312.68332    0  184 -319.71924 -312.68332  2.20%     -  246s
+     0     0 -312.68332    0  155 -319.71924 -312.68332  2.20%     -  247s
+     0     0 -312.99190    0  159 -319.71924 -312.99190  2.10%     -  247s
+     0     0 -313.82513    0  154 -319.71924 -313.82513  1.84%     -  248s
+     0     0 -314.28025    0  150 -319.71924 -314.28025  1.70%     -  248s
+     0     0 -314.38492    0  163 -319.71924 -314.38492  1.67%     -  248s
+     0     0 -314.40578    0  162 -319.71924 -314.40578  1.66%     -  248s
+     0     0 -314.60339    0  143 -319.71924 -314.60339  1.60%     -  249s
+     0     0 -314.60339    0   98 -319.71924 -314.60339  1.60%     -  251s
+     0     0 -315.56343    0   79 -319.71924 -315.56343  1.30%     -  251s
+H    0     0                    -315.9541851 -315.56343  0.12%     -  251s
+     0     0     cutoff    0      -315.95419 -315.95419  0.00%     -  251s
+
+Cutting planes:
+  Gomory: 8
+  Zero half: 12
+
+Explored 1 nodes (24629 simplex iterations) in 251.87 seconds
+Thread count was 1 (of 64 available processors)
+
+Solution count 8: -315.954 -319.719 -319.719 ... -5558.59
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -3.159541851220e+02, best bound -3.159541851220e+02, gap 0.0000%
