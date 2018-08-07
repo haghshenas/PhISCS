@@ -3,19 +3,7 @@ import subprocess
 import time
 import sys
 
-file = open('_simulated1.sh', 'w')
-# file.write('#!/usr/bin/env bash\n')
-# file.write('''
-# killbg() {
-#	 for p in "${pids[@]}" ; do
-#		 kill "$p";
-#	 done
-# }
-# trap "exit" INT TERM ERR
-# trap "kill 0" EXIT
-# trap killbg EXIT
-
-# pids=()\n''')
+file = open('_simulated.sh', 'w')
 
 app = 'ilp'
 ss = [10, 7, 4]
@@ -24,7 +12,7 @@ whichdata = 'data/'
 
 cmdEXE = {}
 cmdEXE['z3'] = 'python src/z3.py'
-cmdEXE['ilp'] = 'python src/ilp.py'
+cmdEXE['ilp'] = 'python src/ilp_doubletAware.py'
 cmdEXE['maxhs'] = './src/csp_maxsat -s /home/frashidi/_PhISCS/src/solver/maxhs'
 cmdEXE['maxino'] = './src_/csp_maxsat -s /home/frashidi/_PhISCS/src/solver/maxino/maxino-2015-k16-static -i'
 fns = ['0.05', '0.10', '0.15', '0.25']
@@ -48,7 +36,7 @@ def run_helper(ss, ks, fns):
 						odir = 'result/' + app
 						fn_rate = df.loc[name.replace('.SCnoisy',''), 'FN']
 						fp_rate = df.loc[name.replace('.SCnoisy',''), 'FP']
-						command = '{} -f {} -fn {:.3f} -fp {:.6f} -o {} -w {} -kmax {} -b {} -e {} --timeout {} --truevaf'.format(cmdEXE[app], 
+						command = '{} -SCFile {} -fn {:.3f} -fp {:.6f} -o {} -w {} -kmax {} -bulkFile {} -delta {} -time {}'.format(cmdEXE[app], 
 																	infile, 
 																	fn_rate, 
 																	fp_rate, 
@@ -59,8 +47,5 @@ def run_helper(ss, ks, fns):
 																	0.05, 
 																	timeout)
 						file.write(command+'\n')
-						# file.write('pids+=($!)\n')
 run_helper(ss, ks, fns)
-
-# file.write('\nwait')
 file.close()
