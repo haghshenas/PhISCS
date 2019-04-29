@@ -1,5 +1,0 @@
-python src/ilp_doubletAware.py -SCFile data/simNo_1-n_100-m_40-s_4-minVAF_0.05-cov_10000-k_0-fn_0.25-fp_0.0001-na_0.15.SCnoisy -fn 0.250 -fp 0.000103 -o result/withISAnoVAF100hrs -w 0 -kmax 0 -time 360000
-python src/ilp_doubletAware.py -SCFile data/simNo_2-n_100-m_40-s_4-minVAF_0.05-cov_10000-k_2-fn_0.25-fp_0.0001-na_0.15.SCnoisy -fn 0.247 -fp 0.000112 -o result/withISAnoVAF100hrs -w 0 -kmax 2 -time 360000
-python src/ilp_doubletAware.py -SCFile data/simNo_1-n_100-m_40-s_4-minVAF_0.05-cov_10000-k_1-fn_0.25-fp_0.0001-na_0.15.SCnoisy -fn 0.218 -fp 0.000096 -o result/withISAnoVAF100hrs -w 0 -kmax 1 -time 360000
-python src/ilp_doubletAware.py -SCFile data/simNo_1-n_100-m_40-s_4-minVAF_0.05-cov_10000-k_2-fn_0.25-fp_0.0001-na_0.15.SCnoisy -fn 0.273 -fp 0.000090 -o result/withISAnoVAF100hrs -w 0 -kmax 2 -time 360000
-python src/ilp_doubletAware.py -SCFile data/simNo_2-n_100-m_40-s_4-minVAF_0.05-cov_10000-k_0-fn_0.25-fp_0.0001-na_0.15.SCnoisy -fn 0.226 -fp 0.000098 -o result/withISAnoVAF100hrs -w 0 -kmax 0 -time 360000

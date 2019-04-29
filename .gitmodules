@@ -1,3 +1,0 @@
-[submodule "src/thirdParty/z3"]
-	path = src/thirdParty/z3
-	url = https://github.com/Z3Prover/z3.git
